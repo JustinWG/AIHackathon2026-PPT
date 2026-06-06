@@ -29,6 +29,9 @@ LAYOUTS = json.loads(Path("schema/layouts.json").read_text())
 MINS_PER_SLIDE     = 6
 MAX_SLIDES         = 24
 MIN_SLIDES         = 8
+# At most this many slides may use a table; the rest render as bullets.
+MAX_TABLES = 1
+
 # Slides are generated one per call so each response is small and reliably valid.
 
 
@@ -228,7 +231,9 @@ For EACH slide produce an object with exactly these keys:
 - "block": one of kickoff|theory|example|exercise|wrapup (use the one given)
 - "title": a short slide title
 - "bullets": array of up to 5 short lines (~12 words each)
-- "table": null, OR an object {"headers": [...], "rows": [[...], ...]} when a table genuinely helps
+- "table": almost always null. Use a table ONLY when the content is truly tabular
+  (a side-by-side comparison or a columned framework). Most slides must be bullets,
+  not tables. A table replaces the bullets on that slide.
 - "notes": object with ALL five keys, each 1-2 sentences:
     "aim", "time", "instructions", "reflective_q", "debrief"
 
@@ -355,6 +360,17 @@ def _normalize_spec(spec: dict, meta: dict) -> None:
             field: (str(notes.get(field) or "").strip() or default)
             for field, default in _NOTE_DEFAULTS.items()
         }
+
+    # Tables replace the bullet content on a slide (the deck engine shows a table
+    # OR bullets, not both), and the model tends to over-produce them. Keep at most
+    # MAX_TABLES, only on theory/example slides; drop the rest so bullets render.
+    kept = 0
+    for slide in spec["slides"]:
+        if slide["table"] is not None:
+            if slide["block"] in ("theory", "example") and kept < MAX_TABLES:
+                kept += 1
+            else:
+                slide["table"] = None
 
     spec["prebite"] = _to_markdown(spec.get("prebite")) or "(see session brief)"
     spec["postbite"] = _to_markdown(spec.get("postbite")) or "(see session follow-up)"
