@@ -68,24 +68,24 @@ def _is_vague(field: str, value: str) -> bool:
         # vague = cannot be normalised to the enum
         return _normalize_level(value) is None
     value_lower = value.lower().strip()
-    if len(value_lower) < 5:
+    if len(value_lower) < 3:  # reject empty / single-char answers, allow short valid ones (HR, QA)
         return True
     return any(pattern in value_lower for pattern in VAGUE_PATTERNS.get(field, []))
 
 
-def _next_missing_field(state: dict) -> str | None:
-    for field in REQUIRED_FIELDS:
-        if field not in state or not state[field]:
-            return field
-    return None
+def _first_field_needing_input(state: dict) -> tuple[str | None, str | None]:
+    """Walk fields in order; return the first that is missing or vague.
 
-
-def _next_vague_field(state: dict) -> str | None:
+    Interleaving missing+vague per field (rather than all-missing-then-all-vague)
+    means a vague answer is challenged immediately, not after every field is filled.
+    """
     for field in REQUIRED_FIELDS:
         val = state.get(field, "")
-        if val and _is_vague(field, val):
-            return field
-    return None
+        if not val:
+            return field, "missing"
+        if _is_vague(field, val):
+            return field, "vague"
+    return None, None
 
 
 def _build_meta(state: dict) -> dict:
@@ -97,31 +97,20 @@ def _build_meta(state: dict) -> dict:
 
 def assess_intake(state: dict) -> dict:
     """
-    Given current intake state dict, returns next question, ready signal, or refuse.
+    Given current intake state dict, returns next question or ready signal.
     state keys are the REQUIRED_FIELDS; values are what the user has answered so far.
+
+    A field that is missing gets its base question; a field that is present but
+    vague gets its follow-up question — challenged immediately, in field order.
+    Never returns "ready" until all five fields are present and specific enough,
+    which is how the system refuses to generate on incomplete intake.
     """
-    missing_field = _next_missing_field(state)
-    if missing_field:
+    field, reason = _first_field_needing_input(state)
+    if field:
         return {
             "status": "question",
-            "field":  missing_field,
-            "text":   QUESTIONS[missing_field],
-        }
-
-    vague_field = _next_vague_field(state)
-    if vague_field:
-        return {
-            "status": "question",
-            "field":  vague_field,
-            "text":   FOLLOW_UPS[vague_field],
-        }
-
-    missing = [f for f in REQUIRED_FIELDS if not state.get(f)]
-    if missing:
-        return {
-            "status":  "refuse",
-            "missing": missing,
-            "text":    f"I can't generate the training yet — still need: {', '.join(missing)}.",
+            "field":  field,
+            "text":   QUESTIONS[field] if reason == "missing" else FOLLOW_UPS[field],
         }
 
     return {
