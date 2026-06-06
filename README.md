@@ -14,10 +14,12 @@ content pipeline and returns an editable training spec (slides, speaker notes, p
 3. Produces a full training **spec**: per-slide title, bullets, tables, and speaker notes
    with all 5 fields (aim, time, instructions, reflective question, debrief)
 4. Produces a **pre-bite** (prep) and **post-bite** (follow-up) document
+5. Renders an **editable `.pptx`** in Maverx house style (real master layouts, speaker
+   notes on every slide, real tables) plus `.docx` pre/post-bite
 
-> **Note:** the editable `.pptx` / `.docx` *file* rendering is handled by the deck engine
-> (`engine/`, owned by Person A) and is being finished separately. Today the app returns the
-> full training **spec** and lets you download `spec.json`, `prebite.md`, and `postbite.md`.
+**Output toggle:** before generating, choose **PowerPoint deck (.pptx)** to get the editable
+deck + `.docx` docs, or **Training spec (JSON)** to get just the structured `spec.json` +
+`prebite.md` / `postbite.md`.
 
 ---
 
@@ -54,9 +56,11 @@ To rebuild after code changes: `docker compose up --build`.
 1. Open **http://localhost:8501**
 2. Answer the 5 questions in the chat (topic, audience, level, duration, objective).
    Vague answers get a follow-up — that's intentional.
-3. Click **Generate training deck**. Generation takes ~1–2 minutes (the pipeline writes
+3. Pick the output mode: **PowerPoint deck (.pptx)** or **Training spec (JSON)**.
+4. Click **Generate training deck**. Generation takes ~1–2 minutes (the pipeline writes
    one slide at a time for reliability).
-4. Download the results: `spec.json`, `prebite.md`, `postbite.md`.
+5. Download the results — `.pptx` + `prebite.docx` + `postbite.docx` (PowerPoint mode),
+   or `spec.json` + `prebite.md` + `postbite.md` (JSON mode).
 
 ---
 
@@ -74,7 +78,8 @@ FastAPI backend (backend/app.py)
    ▼
 Training spec JSON  (meta · slides · prebite · postbite)
    ▼
-engine/ (Person A) — turns the spec into editable .pptx / .docx  [integration pending]
+engine/ (Person A) — build_pptx + build_bites turn the spec into editable
+                     .pptx (Team19 master layouts) + .docx pre/post-bite
 ```
 
 The contract between the pipeline and the deck engine is documented in
@@ -118,7 +123,7 @@ lists them). The content pipeline is template-agnostic.
 | `frontend/maverx/` | React UI (intake wizard + live brief + downloads) |
 | `backend/app.py` | FastAPI: serves the UI + `/api/generate`, `/api/assess`, `/api/health` |
 | `content/` | Intake + LLM content pipeline (Person B) |
-| `engine/` | PPTX / docx renderer (Person A) — integration pending |
+| `engine/` | PPTX / docx renderer (Person A) — wired into `/api/generate` |
 | `schema/` | Training-spec JSON schema, layout map, sample, engine contract |
 | `master/` | Maverx master template + brand assets |
 | `STYLE_CHECKLIST.md` | House-style QA checklist |
