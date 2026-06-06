@@ -4,7 +4,7 @@
 
 function VariantB() {
   const Bld = useBuilder();
-  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline } = Bld;
+  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline, genResult, genError } = Bld;
   const scrollRef = React.useRef(null);
   const [draft, setDraft] = React.useState('');
 
@@ -162,15 +162,31 @@ function DeckPreview({ Bld }) {
         {building ? <ArcSkeleton meta={meta} answeredCount={answeredCount} /> : <SlideList Bld={Bld} />}
       </div>
 
-      {phase === 'done' && (
-        <div style={{ flex: '0 0 auto', borderTop: `1px solid ${MVX.line}`, background: '#fff', padding: '12px 16px',
-          display: 'flex', gap: 9 }}>
-          <div style={{ flex: 2 }}><FileCard compact icon="PPTX" accent={MVX.ink}
-            name={`${slug(meta.topic)}.pptx`} meta={`${outline.slides.length} editable slides`} /></div>
-          <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.docx" meta="Prep" /></div>
-          <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.docx" meta="Follow-up" /></div>
-        </div>
-      )}
+      {phase === 'done' && (() => {
+        const files = genResult && genResult.files;
+        const specSlides = genResult && genResult.spec && genResult.spec.slides;
+        const slideCount = specSlides ? specSlides.length : (outline ? outline.slides.length : 0);
+        const dl = (path) => { window.open(`${API_BASE}/api/download/${path}`, '_blank'); };
+        if (genError) return (
+          <div style={{ flex: '0 0 auto', borderTop: `1px solid ${MVX.line}`, background: '#fff', padding: '12px 16px' }}>
+            <p style={{ fontFamily: MVX.display, fontSize: 13, color: MVX.red, margin: '0 0 8px' }}>{genError}</p>
+            <button onClick={Bld.generate} style={{ padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+              background: MVX.grad, color: '#fff', fontFamily: MVX.display, fontWeight: 600, fontSize: 13 }}>Retry</button>
+          </div>
+        );
+        return (
+          <div style={{ flex: '0 0 auto', borderTop: `1px solid ${MVX.line}`, background: '#fff', padding: '12px 16px',
+            display: 'flex', gap: 9 }}>
+            <div style={{ flex: 2 }}><FileCard compact icon="PPTX" accent={MVX.ink}
+              name={files ? files.pptx : `${slug(meta.topic)}.pptx`} meta={`${slideCount} editable slides`}
+              onClick={files ? () => dl(files.pptx) : undefined} /></div>
+            <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.docx" meta="Prep"
+              onClick={files ? () => dl(files.prebite) : undefined} /></div>
+            <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.docx" meta="Follow-up"
+              onClick={files ? () => dl(files.postbite) : undefined} /></div>
+          </div>
+        );
+      })()}
     </>
   );
 }

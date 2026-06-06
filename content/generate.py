@@ -5,6 +5,10 @@ Public API (do not change signature without team sync):
     generate_spec(meta: dict) -> dict
 
 Raises GenerateError on unrecoverable failure.
+
+Pipeline (two-stage):
+  Stage 1 — outline_call: meta -> slide plan (titles, blocks, time budget)
+  Stage 2 — content_call: outline -> full spec JSON with bullets, tables, notes
 """
 import json
 import os
@@ -16,8 +20,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SCHEMA = json.loads(Path("schema/training_spec.schema.json").read_text())
+SCHEMA  = json.loads(Path("schema/training_spec.schema.json").read_text())
 LAYOUTS = json.loads(Path("schema/layouts.json").read_text())
+
+# Target ~1 slide per 5 minutes — ~18 slides for 90 min, ~24 for 2 hrs, ~36 for 3 hrs.
+# Capped at 40 to keep JSON within token limits.
+MINS_PER_SLIDE     = 5
+MAX_SLIDES         = 40
+MIN_SLIDES         = 8
+CONTENT_MAX_TOKENS = 8000  # a 40-slide JSON with full notes is ~6k tokens
 
 
 class GenerateError(Exception):
@@ -34,25 +45,28 @@ def _get_client() -> OpenAI:
     )
 
 
+def _model() -> str:
+    return os.environ.get("OPENROUTER_MODEL", "anthropic/claude-sonnet-4-6")
+
+
 def _load_prompt(filename: str) -> str:
     path = Path("content/prompts") / filename
-    if path.exists():
-        return path.read_text()
-    return ""
+    return path.read_text() if path.exists() and path.stat().st_size > 50 else ""
 
 
-def _block_to_layout_map() -> dict:
+def _block_map() -> dict:
     return LAYOUTS.get("block_to_layout", {})
 
 
-def _call_llm(client: OpenAI, system: str, user: str, model: str = "anthropic/claude-3.5-sonnet") -> str:
+def _call_llm(client: OpenAI, system: str, user: str, max_tokens: int = 2000) -> str:
     response = client.chat.completions.create(
-        model=model,
+        model=_model(),
         messages=[
             {"role": "system", "content": system},
             {"role": "user",   "content": user},
         ],
         temperature=0.7,
+        max_tokens=max_tokens,
     )
     return response.choices[0].message.content
 
@@ -75,62 +89,96 @@ def _validate(spec: dict) -> list[str]:
     return errors
 
 
-def generate_spec(meta: dict) -> dict:
-    """
-    LLM pipeline: meta -> full training spec matching training_spec.schema.json.
-    Raises GenerateError on unrecoverable failure.
-    """
-    client = _get_client()
-    block_map = _block_to_layout_map()
-    system_prompt = _load_prompt("generate_system.md") or _default_system(block_map)
-    user_message = _build_user_message(meta, block_map)
+def _parse_minutes(duration_str: str) -> int:
+    digits = "".join(c for c in str(duration_str) if c.isdigit())[:4]
+    try:
+        return int(digits) if digits else 120
+    except ValueError:
+        return 120
 
-    raw = _call_llm(client, system_prompt, user_message)
+
+def _slide_count(minutes: int) -> int:
+    return max(MIN_SLIDES, min(MAX_SLIDES, round(minutes / MINS_PER_SLIDE)))
+
+
+# ---------------------------------------------------------------------------
+# Stage 1 — outline
+# ---------------------------------------------------------------------------
+
+_OUTLINE_SYSTEM = """You are an expert instructional designer.
+Given training metadata, produce a slide-by-slide outline as a JSON array.
+Each item: {"block": "kickoff|theory|example|exercise|wrapup", "title": "...", "time_minutes": <int>}
+Rules:
+- Follow this arc without exception: kickoff → (theory → example)+ → exercise → wrapup
+- time_minutes values must sum exactly to the total duration
+- Kickoff and wrapup: 5–10 min each. Exercises: at least 20 min total.
+- Return ONLY the JSON array, no prose, no markdown fences."""
+
+
+def _outline_user(meta: dict, slide_count: int, minutes: int) -> str:
+    return f"""Generate a {slide_count}-slide outline for:
+
+Topic: {meta['topic']}
+Audience: {meta['audience']}
+Level: {meta['level']}
+Duration: {minutes} minutes
+Objective: {meta['objective']}
+
+Produce exactly {slide_count} slides. time_minutes values must sum to {minutes}."""
+
+
+def _generate_outline(client: OpenAI, meta: dict) -> list[dict]:
+    minutes     = _parse_minutes(meta["duration"])
+    slide_count = _slide_count(minutes)
+    system      = _load_prompt("outline_system.md") or _OUTLINE_SYSTEM
+    user        = _outline_user(meta, slide_count, minutes)
+
+    raw = _call_llm(client, system, user, max_tokens=1500)
+    clean = raw.strip()
+    if clean.startswith("```"):
+        lines = clean.splitlines()
+        clean = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
 
     try:
-        spec = _extract_json(raw)
-    except json.JSONDecodeError as e:
-        # Retry once with repair instruction
-        repair_msg = (
-            f"Your previous response was not valid JSON. Error: {e}\n\n"
-            f"Return only the corrected JSON, no prose, no markdown fences.\n\n"
+        outline = json.loads(clean)
+    except json.JSONDecodeError:
+        repair = (
+            f"Your response was not valid JSON. Return only the JSON array, no prose.\n\n"
             f"Previous response:\n{raw}"
         )
-        raw = _call_llm(client, system_prompt, repair_msg)
-        try:
-            spec = _extract_json(raw)
-        except json.JSONDecodeError as e2:
-            raise GenerateError(f"LLM returned invalid JSON after retry: {e2}")
+        raw = _call_llm(client, system, repair, max_tokens=1500)
+        outline = json.loads(raw.strip())
 
-    errors = _validate(spec)
-    if errors:
-        raise GenerateError(f"Generated spec failed schema validation: {errors}")
-
-    return spec
+    if not isinstance(outline, list):
+        raise GenerateError(f"Outline call returned unexpected type: {type(outline)}")
+    return outline
 
 
-def _default_system(block_map: dict) -> str:
-    layout_list = "\n".join(f"  - {block}: {layout}" for block, layout in block_map.items())
-    return f"""You are an expert instructional designer. You generate complete, structured training specifications in JSON.
+# ---------------------------------------------------------------------------
+# Stage 2 — content
+# ---------------------------------------------------------------------------
 
-LAYOUT MAP — use ONLY these layout values for each block type:
+def _content_system(block_map: dict) -> str:
+    layout_list = "\n".join(f"  {block}: {layout}" for block, layout in block_map.items())
+    return f"""You are an expert instructional designer. Fill a slide outline into a complete training spec.
+
+LAYOUT MAP — use ONLY these layout values:
 {layout_list}
 
 RULES:
-1. Every training must follow this exact didactic arc: kickoff → theory → example → exercise → wrapup
-2. Every slide must have all 5 speaker note fields: aim, time, instructions, reflective_q, debrief
-3. Timing across all slides must sum to the stated duration in minutes
-4. Use beginner-appropriate language when level is "beginner"
-5. Return ONLY valid JSON matching the schema — no prose, no markdown fences, no explanation
-6. bullets is always an array (can be empty []); table is either null or a valid table object
-7. Slide count: approximately 1 slide per 4 minutes of training duration
+1. Every slide must have all 5 speaker note fields: aim, time, instructions, reflective_q, debrief
+2. time in notes must match the outline's time_minutes (write as "X minutes")
+3. At least one slide must use a table where it genuinely aids understanding
+4. bullets is always an array (never null, can be empty []); table is null or a valid table object
+5. Make content specific to the topic and audience — not generic filler
+6. Return ONLY valid JSON matching the schema — no prose, no markdown fences
 
 REQUIRED JSON STRUCTURE:
 {{
-  "meta": {{ "topic": "", "audience": "", "level": "", "duration": "", "objective": "" }},
+  "meta": {{}},
   "slides": [
     {{
-      "layout": "<from layout map above>",
+      "layout": "<from layout map>",
       "block": "kickoff|theory|example|exercise|wrapup",
       "title": "",
       "bullets": [""],
@@ -140,42 +188,102 @@ REQUIRED JSON STRUCTURE:
       }}
     }}
   ],
-  "prebite": "<markdown string>",
-  "postbite": "<markdown string>"
+  "prebite": "<markdown>",
+  "postbite": "<markdown>"
 }}"""
 
 
-def _build_user_message(meta: dict, block_map: dict) -> str:
-    duration_min = meta.get("duration", "120")
+def _content_user(meta: dict, outline: list[dict]) -> str:
+    outline_text = "\n".join(
+        f"{i+1}. [{item['block'].upper()}] {item['title']} ({item.get('time_minutes', '?')} min)"
+        for i, item in enumerate(outline)
+    )
+    return f"""Fill this outline into a complete training spec JSON.
+
+Metadata:
+  Topic: {meta['topic']}
+  Audience: {meta['audience']}
+  Level: {meta['level']}
+  Duration: {meta['duration']}
+  Objective: {meta['objective']}
+
+Outline ({len(outline)} slides):
+{outline_text}
+
+Also generate:
+- prebite: a short preparation task for participants before the session (article/reflection/install)
+- postbite: a follow-up after the session (reflection questions, assignment, further reading)
+
+Return the full spec JSON only."""
+
+
+def _generate_content(client: OpenAI, meta: dict, outline: list[dict]) -> dict:
+    block_map = _block_map()
+    system    = _load_prompt("generate_system.md") or _content_system(block_map)
+    user      = _content_user(meta, outline)
+
+    raw = _call_llm(client, system, user, max_tokens=CONTENT_MAX_TOKENS)
+
     try:
-        minutes = int("".join(filter(str.isdigit, str(duration_min)[:4])))
-    except ValueError:
-        minutes = 120
-    slide_count = max(8, round(minutes / 4))
+        spec = _extract_json(raw)
+    except json.JSONDecodeError as e:
+        repair = (
+            f"Your response was not valid JSON. Error: {e}\n\n"
+            f"Return only the corrected JSON, no prose, no markdown fences.\n\n"
+            f"Previous response:\n{raw}"
+        )
+        raw = _call_llm(client, system, repair, max_tokens=CONTENT_MAX_TOKENS)
+        try:
+            spec = _extract_json(raw)
+        except json.JSONDecodeError as e2:
+            raise GenerateError(f"LLM returned invalid JSON after retry: {e2}")
 
-    return f"""Generate a complete training specification for:
+    # always use canonical intake meta — never trust what the LLM echoes back
+    spec["meta"] = meta
 
-Topic: {meta['topic']}
-Audience: {meta['audience']}
-Knowledge level: {meta['level']}
-Duration: {meta['duration']}
-Primary learning objective: {meta['objective']}
+    errors = _validate(spec)
+    if errors:
+        repair = (
+            f"Your JSON had schema validation errors:\n{errors}\n\n"
+            f"Fix them and return only the corrected JSON.\n\nPrevious response:\n{json.dumps(spec)}"
+        )
+        raw = _call_llm(client, system, repair, max_tokens=CONTENT_MAX_TOKENS)
+        try:
+            spec = _extract_json(raw)
+        except json.JSONDecodeError as e:
+            raise GenerateError(f"Schema repair returned invalid JSON: {e}")
+        spec["meta"] = meta
+        errors = _validate(spec)
+        if errors:
+            raise GenerateError(f"Generated spec failed schema validation after repair: {errors}")
 
-Target approximately {slide_count} slides total. Distribute timing so all slides sum to {minutes} minutes.
-At least one slide should use a table where it genuinely aids understanding (a framework, comparison, or checklist).
-Make content specific to the topic and audience — not generic filler.
-"""
+    return spec
+
+
+# ---------------------------------------------------------------------------
+# Public entry point
+# ---------------------------------------------------------------------------
+
+def generate_spec(meta: dict) -> dict:
+    """
+    Two-stage LLM pipeline: meta -> full training spec matching training_spec.schema.json.
+    Stage 1: outline (titles + blocks + timing).
+    Stage 2: content (bullets, tables, speaker notes, pre/post-bite).
+    Raises GenerateError on unrecoverable failure.
+    """
+    client  = _get_client()
+    outline = _generate_outline(client, meta)
+    spec    = _generate_content(client, meta, outline)
+    return spec
 
 
 if __name__ == "__main__":
     import sys
-    intake_path = sys.argv[1] if len(sys.argv) > 1 else "schema/sample_spec.json"
-    meta = json.loads(Path(intake_path).read_text()).get("meta")
-    if not meta:
-        print("Pass a file with a top-level 'meta' key, or a raw meta dict.")
-        sys.exit(1)
-    spec = generate_spec(meta)
-    out_path = "output/generated_spec.json"
+    meta_path = sys.argv[1] if len(sys.argv) > 1 else "schema/sample_spec.json"
+    raw       = json.loads(Path(meta_path).read_text())
+    meta      = raw.get("meta", raw)
+    spec      = generate_spec(meta)
+    out_path  = "output/generated_spec.json"
     Path("output").mkdir(exist_ok=True)
     Path(out_path).write_text(json.dumps(spec, indent=2))
     print(f"Written: {out_path}")

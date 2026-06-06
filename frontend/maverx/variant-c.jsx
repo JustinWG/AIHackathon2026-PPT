@@ -4,7 +4,7 @@
 
 function VariantC() {
   const Bld = useBuilder();
-  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline } = Bld;
+  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline, genResult, genError } = Bld;
   const [draft, setDraft] = React.useState('');
   const inputRef = React.useRef(null);
 
@@ -156,28 +156,55 @@ function VariantC() {
           </div>
         )}
 
-        {phase === 'done' && (
+        {phase === 'done' && genError && (
+          <div style={{ maxWidth: 460, width: '100%', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 16, background: MVX.red, display: 'grid', placeItems: 'center' }}>
+                <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M3 11L11 3M3 3l8 8"/></svg>
+              </span>
+              <h2 style={{ margin: 0, fontFamily: MVX.display, fontSize: 24, fontWeight: 600, letterSpacing: '-0.015em', color: MVX.red }}>Generation failed</h2>
+            </div>
+            <p style={{ margin: '8px 0 20px', fontSize: 14, color: MVX.slate, lineHeight: 1.5 }}>{genError}</p>
+            <button onClick={Bld.generate} style={{ marginRight: 12, padding: '10px 22px', borderRadius: 10, border: 'none', cursor: 'pointer',
+              background: MVX.grad, color: '#fff', fontFamily: MVX.display, fontWeight: 600, fontSize: 14 }}>Retry</button>
+            <button onClick={Bld.reset} style={{ padding: '10px 22px', borderRadius: 10, background: 'transparent', border: `1px solid ${MVX.line}`, cursor: 'pointer',
+              fontFamily: MVX.display, fontSize: 13, fontWeight: 600, color: MVX.slate }}>Start over</button>
+          </div>
+        )}
+
+        {phase === 'done' && !genError && (() => {
+          const files = genResult && genResult.files;
+          const specSlides = genResult && genResult.spec && genResult.spec.slides;
+          const slideCount = specSlides ? specSlides.length : (outline ? outline.slides.length : 0);
+          const dl = (path) => { window.open(`${API_BASE}/api/download/${path}`, '_blank'); };
+          return (
           <div style={{ maxWidth: 460, width: '100%', margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
               <span style={{ width: 30, height: 30, borderRadius: 16, background: '#1F9B5B', display: 'grid', placeItems: 'center' }}>
                 <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M3 7l3 3 5-6"/></svg>
               </span>
-              <h2 style={{ margin: 0, fontFamily: MVX.display, fontSize: 24, fontWeight: 600, letterSpacing: '-0.015em' }}>Done in seconds.</h2>
+              <h2 style={{ margin: 0, fontFamily: MVX.display, fontSize: 24, fontWeight: 600, letterSpacing: '-0.015em' }}>Your training is ready.</h2>
             </div>
             <p style={{ margin: '0 0 20px', fontSize: 14, color: MVX.slate, lineHeight: 1.5 }}>
-              {outline.slides.length} editable slides in the Maverx house style, with trainer notes on every slide — plus prep and follow-up docs.
+              {slideCount} editable slides in the Maverx house style, with trainer notes on every slide — plus prep and follow-up docs.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <FileCard icon="PPTX" accent={MVX.ink} name={`${slugC(meta.topic)}.pptx`} meta={`${outline.slides.length} slides \u00b7 speaker notes`} />
+              <FileCard icon="PPTX" accent={MVX.ink}
+                name={files ? files.pptx : `${slugC(meta.topic)}.pptx`}
+                meta={`${slideCount} slides · speaker notes`}
+                onClick={files ? () => dl(files.pptx) : undefined} />
               <div style={{ display: 'flex', gap: 9 }}>
-                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.docx" meta="Pre-session prep" /></div>
-                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.docx" meta="Follow-up" /></div>
+                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.docx" meta="Pre-session prep"
+                  onClick={files ? () => dl(files.prebite) : undefined} /></div>
+                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.docx" meta="Follow-up"
+                  onClick={files ? () => dl(files.postbite) : undefined} /></div>
               </div>
             </div>
             <button onClick={Bld.reset} style={{ marginTop: 16, background: 'transparent', border: 'none', cursor: 'pointer',
               fontFamily: MVX.display, fontSize: 13, fontWeight: 600, color: MVX.slate }}>↺  Build another training</button>
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

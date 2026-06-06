@@ -31,6 +31,31 @@ const MVX = {
   body: '"Raleway", system-ui, sans-serif',
 };
 
+// API base — auto-detect: same origin in Docker, localhost:8000 in dev
+const API_BASE = (() => {
+  const loc = typeof window !== 'undefined' && window.location;
+  if (!loc) return 'http://localhost:8000';
+  // If served by FastAPI (port 8000) or same origin, use relative paths
+  if (loc.port === '8000' || loc.port === '') return '';
+  return 'http://localhost:8000';
+})();
+
+// Level normalization — mirrors content/intake.py _normalize_level()
+const LEVEL_ALIASES = {
+  beginner:     ['beginner','begin','no experience','no prior','novice','new','never','zero','none','basic','starter','entry'],
+  intermediate: ['intermediate','some experience','some','moderate','familiar','worked with','used before','average','mid'],
+  advanced:     ['advanced','expert','confident','experienced','senior','professional','practitioner','deep','extensive'],
+};
+
+function normalizeLevel(raw) {
+  const v = (raw || '').toLowerCase().trim();
+  if (['beginner','intermediate','advanced'].includes(v)) return v;
+  for (const [canonical, aliases] of Object.entries(LEVEL_ALIASES)) {
+    if (aliases.some((a) => v.includes(a))) return canonical;
+  }
+  return v; // pass through if unrecognised — backend will handle
+}
+
 // per-didactic-block accent (used by the live spec preview + chips)
 const BLOCKS = {
   kickoff:  { label: 'Kickoff',  color: '#0D006A', tint: '#E9E7FA' },
@@ -213,8 +238,8 @@ function useBuilder() {
       }
     }
 
-    // accept value
-    const value = text;
+    // accept value (normalize level to schema enum)
+    const value = field.key === 'level' ? normalizeLevel(text) : text;
     const nextMeta = { ...meta, [field.key]: value };
     setMeta(nextMeta);
     setFollowup(false);
@@ -238,25 +263,50 @@ function useBuilder() {
     }
   }, [phase, fieldIdx, followupActive, meta, botTyping, pushBot]);
 
+  const [genResult, setGenResult] = React.useState(null);
+  const [genError, setGenError] = React.useState(null);
+
   const generate = React.useCallback(() => {
     if (phase !== 'ready' && phase !== 'done') return;
     setPhase('generating');
     setGenStep(0);
+    setGenError(null);
+    setGenResult(null);
+
+    // Animate progress steps while the API call runs
     let i = 0;
-    const tick = () => {
+    const stepInterval = setInterval(() => {
       i += 1;
-      if (i < GEN_STEPS.length) {
-        setGenStep(i);
-        setTimeout(tick, 780 + Math.random() * 360);
-      } else {
-        setTimeout(() => { setGenStep(GEN_STEPS.length); setPhase('done'); }, 700);
-      }
-    };
-    setTimeout(tick, 820);
-  }, [phase]);
+      if (i < GEN_STEPS.length - 1) setGenStep(i); // hold last step until API returns
+      else clearInterval(stepInterval);
+    }, 2200);
+
+    fetch(`${API_BASE}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meta }),
+    })
+      .then((r) => {
+        if (!r.ok) return r.json().then((e) => { throw new Error(e.detail || 'Generation failed'); });
+        return r.json();
+      })
+      .then((data) => {
+        clearInterval(stepInterval);
+        setGenResult(data);
+        setGenStep(GEN_STEPS.length);
+        setPhase('done');
+      })
+      .catch((err) => {
+        clearInterval(stepInterval);
+        setGenError(err.message || 'Generation failed');
+        setGenStep(GEN_STEPS.length);
+        setPhase('done');
+      });
+  }, [phase, meta]);
 
   const reset = React.useCallback(() => {
     setPhase('intake'); setFieldIdx(0); setFollowup(false); setMeta({}); setGenStep(-1);
+    setGenResult(null); setGenError(null);
     setMessages([
       { role: 'bot', text: 'Fresh start. Let\u2019s build another training.' },
       { role: 'bot', text: FIELDS[0].q, field: FIELDS[0].key },
@@ -268,7 +318,7 @@ function useBuilder() {
 
   return {
     phase, meta, messages, botTyping, currentField, totalFields, answeredCount,
-    genStep, genSteps: GEN_STEPS, outline,
+    genStep, genSteps: GEN_STEPS, outline, genResult, genError,
     submit, generate, reset,
   };
 }
@@ -333,4 +383,4 @@ function SparkIcon({ size = 17 }) {
   document.head.appendChild(s);
 })();
 
-Object.assign(window, { MVX, BLOCKS, FIELDS, MvxMark, MvxLockup, useBuilder, TypingDots, FileCard, SparkIcon, buildOutline, parseMinutes });
+Object.assign(window, { MVX, BLOCKS, FIELDS, MvxMark, MvxLockup, useBuilder, TypingDots, FileCard, SparkIcon, buildOutline, parseMinutes, normalizeLevel, API_BASE });

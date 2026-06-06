@@ -201,16 +201,35 @@ function GenProgress({ B }) {
 }
 
 function DonePanel({ B }) {
-  const { outline, meta } = B;
-  const n = outline ? outline.slides.length : 9;
+  const { outline, meta, genResult, genError } = B;
+  const files = genResult && genResult.files;
+  const specSlides = genResult && genResult.spec && genResult.spec.slides;
+  const n = specSlides ? specSlides.length : (outline ? outline.slides.length : 9);
   const topicSlug = (meta.topic || 'training').toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 26);
+  const dl = (path) => { window.open(`${API_BASE}/api/download/${path}`, '_blank'); };
+
+  if (genError) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        <p style={{ fontFamily: MVX.display, fontSize: 14, color: MVX.red }}>{genError}</p>
+        <button onClick={B.generate} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', cursor: 'pointer',
+          background: MVX.grad, color: '#fff', fontFamily: MVX.display, fontWeight: 600, fontSize: 14 }}>Retry</button>
+        <button onClick={B.reset} style={{ background: 'transparent', border: 'none', cursor: 'pointer',
+          fontFamily: MVX.display, fontSize: 12.5, fontWeight: 600, color: MVX.slate, padding: '4px' }}>Start over</button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-      <FileCard icon="PPTX" name={`${topicSlug}.pptx`} accent={MVX.ink}
-        meta={`${n} editable slides · speaker notes on every slide`} />
+      <FileCard icon="PPTX" name={files ? files.pptx : `${topicSlug}.pptx`} accent={MVX.ink}
+        meta={`${n} editable slides · speaker notes on every slide`}
+        onClick={files ? () => dl(files.pptx) : undefined} />
       <div style={{ display: 'flex', gap: 9 }}>
-        <div style={{ flex: 1 }}><FileCard compact icon="DOC" name="prebite.docx" accent={MVX.purple} meta="Pre-session prep" /></div>
-        <div style={{ flex: 1 }}><FileCard compact icon="DOC" name="postbite.docx" accent={MVX.red} meta="Follow-up" /></div>
+        <div style={{ flex: 1 }}><FileCard compact icon="DOC" name="prebite.docx" accent={MVX.purple} meta="Pre-session prep"
+          onClick={files ? () => dl(files.prebite) : undefined} /></div>
+        <div style={{ flex: 1 }}><FileCard compact icon="DOC" name="postbite.docx" accent={MVX.red} meta="Follow-up"
+          onClick={files ? () => dl(files.postbite) : undefined} /></div>
       </div>
       <button onClick={B.reset} style={{ marginTop: 2, background: 'transparent', border: 'none', cursor: 'pointer',
         fontFamily: MVX.display, fontSize: 12.5, fontWeight: 600, color: MVX.slate, padding: '4px' }}>
