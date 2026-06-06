@@ -30,7 +30,7 @@ MINS_PER_SLIDE     = 6
 MAX_SLIDES         = 24
 MIN_SLIDES         = 8
 # At most this many slides may use a table; the rest render as bullets.
-MAX_TABLES = 1
+MAX_TABLES = 2
 
 # Slides are generated one per call so each response is small and reliably valid.
 
