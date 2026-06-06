@@ -69,6 +69,8 @@ def generate(req: GenerateRequest):
         spec = generate_spec(meta)
     except GenerateError as e:
         raise HTTPException(status_code=422, detail=f"Content generation failed: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected generation error: {e}")
 
     if not MASTER_PATH.exists():
         raise HTTPException(
