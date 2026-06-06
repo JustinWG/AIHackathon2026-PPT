@@ -36,9 +36,16 @@ class GenerateError(Exception):
 
 
 def _get_client() -> OpenAI:
-    api_key = os.environ.get("OPENROUTER_API_KEY")
+    api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
     if not api_key:
         raise GenerateError("OPENROUTER_API_KEY not set in environment / .env")
+    if not api_key.isascii():
+        bad = [repr(c) for c in api_key if ord(c) > 127]
+        raise GenerateError(
+            f"OPENROUTER_API_KEY contains non-ASCII characters ({', '.join(bad)}) — "
+            "this usually means a copy-paste turned a hyphen into an em-dash. "
+            "Re-copy the key as plain text into .env."
+        )
     return OpenAI(
         api_key=api_key,
         base_url="https://openrouter.ai/api/v1",

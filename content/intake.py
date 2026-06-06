@@ -12,6 +12,8 @@ Returns one of:
 C calls this per Streamlit message. C owns the UI loop and session_state.
 """
 
+import re
+
 REQUIRED_FIELDS = ["topic", "audience", "level", "duration", "objective"]
 
 # Schema requires exactly these three values for level
@@ -35,13 +37,21 @@ QUESTIONS = {
     "objective": "What is the primary learning objective? What should participants be able to DO after the session?",
 }
 
-VAGUE_PATTERNS = {
-    "topic":     ["something", "stuff", "things", "topic", "training", "course"],
-    "audience":  ["everyone", "anybody", "people", "team", "staff", "employees", "users"],
-    "level":     [],  # handled by _normalize_level
-    "duration":  ["a while", "some time", "half a day", "a day", "few hours", "a few"],
-    "objective": ["learn", "understand", "know", "get better", "improve", "stuff"],
+# Single-word "filler" tokens. An answer is vague only if EVERY meaningful word
+# in it is one of these (so "team" is vague, but "team leads" is not).
+# duration is handled separately (must contain a number); level via _normalize_level.
+VAGUE_TOKENS = {
+    "topic":     {"something", "stuff", "things", "thing", "topic", "training", "course", "anything"},
+    "audience":  {"everyone", "everybody", "anyone", "anybody", "people", "team", "teams",
+                  "staff", "employees", "employee", "users", "user", "folks", "group", "everybody"},
+    "objective": {"learn", "learning", "understand", "understanding", "know", "knowing",
+                  "improve", "improving", "better", "stuff", "things", "grow"},
 }
+
+# Stripped before vagueness analysis so "the team" reduces to {"team"}.
+STOPWORDS = {"the", "a", "an", "our", "my", "your", "their", "of", "for", "to", "in", "on",
+             "at", "and", "or", "with", "some", "that", "this", "these", "those", "is",
+             "are", "be", "will", "can", "they", "it", "about", "all", "more", "how", "what"}
 
 FOLLOW_UPS = {
     "topic":     "That's a bit broad — could you be more specific? For example: 'negotiation techniques', 'Power BI dashboards', or 'writing effective emails'.",
@@ -64,13 +74,21 @@ def _normalize_level(value: str) -> str | None:
 
 
 def _is_vague(field: str, value: str) -> bool:
+    v = value.lower().strip()
     if field == "level":
         # vague = cannot be normalised to the enum
         return _normalize_level(value) is None
-    value_lower = value.lower().strip()
-    if len(value_lower) < 3:  # reject empty / single-char answers, allow short valid ones (HR, QA)
+    if len(v) < 3:  # reject empty / single-char answers, allow short valid ones (HR, QA)
         return True
-    return any(pattern in value_lower for pattern in VAGUE_PATTERNS.get(field, []))
+    if field == "duration":
+        # a usable duration must contain a number; "a few hours" does not, "90 min" does
+        return not any(ch.isdigit() for ch in v)
+    # topic / audience / objective: vague only if every meaningful word is a filler token
+    tokens = [t for t in re.split(r"[^a-z0-9]+", v) if t and t not in STOPWORDS]
+    if not tokens:
+        return True
+    filler = VAGUE_TOKENS.get(field, set())
+    return all(t in filler for t in tokens)
 
 
 def _first_field_needing_input(state: dict) -> tuple[str | None, str | None]:
