@@ -4,7 +4,7 @@
 
 function VariantC() {
   const Bld = useBuilder();
-  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline, spec, genError, downloadText } = Bld;
+  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline, spec, genError, downloadText, downloadServerFile, renderMode, setRenderMode } = Bld;
   const [draft, setDraft] = React.useState('');
   const inputRef = React.useRef(null);
 
@@ -129,6 +129,16 @@ function VariantC() {
                   background: BLOCKS[k].tint, padding: '5px 11px', borderRadius: 20 }}>{BLOCKS[k].label}</span>
               ))}
             </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              {[{k:true,label:'PowerPoint deck (.pptx)'},{k:false,label:'Training spec (JSON)'}].map((o) => (
+                <button key={String(o.k)} onClick={() => setRenderMode(o.k)}
+                  style={{ flex: 1, height: 40, borderRadius: 10, cursor: 'pointer', fontFamily: MVX.display, fontWeight: 600, fontSize: 13,
+                    border: renderMode === o.k ? `2px solid ${MVX.purple}` : `1.5px solid ${MVX.line}`,
+                    background: renderMode === o.k ? MVX.gradSoft : '#fff', color: renderMode === o.k ? '#fff' : MVX.slate }}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
             <button onClick={Bld.generate} style={{ width: '100%', height: 54, borderRadius: 14, border: 'none', cursor: 'pointer',
               background: MVX.grad, color: '#fff', fontFamily: MVX.display, fontWeight: 600, fontSize: 16,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, boxShadow: '0 12px 30px rgba(123,31,162,0.32)' }}>
@@ -176,17 +186,32 @@ function VariantC() {
               <h2 style={{ margin: 0, fontFamily: MVX.display, fontSize: 24, fontWeight: 600, letterSpacing: '-0.015em' }}>Training spec ready.</h2>
             </div>
             <p style={{ margin: '0 0 20px', fontSize: 14, color: MVX.slate, lineHeight: 1.5 }}>
-              {outline.slides.length} slides across the full Maverx didactic arc, with all 5 speaker-note fields on every slide. The editable .pptx render comes from the deck engine next — download the spec and prep docs now.
+              {outline.slides.length} slides across the full Maverx didactic arc, with all 5 speaker-note fields on every slide.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <FileCard icon="JSON" accent={MVX.ink} name={`${slugC(meta.topic)}.spec.json`} meta={`${outline.slides.length} slides · full training spec`}
-                onClick={() => spec && downloadText(`${slugC(meta.topic)}.spec.json`, JSON.stringify(spec, null, 2), 'application/json')} />
-              <div style={{ display: 'flex', gap: 9 }}>
-                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.md" meta="Pre-session prep"
-                  onClick={() => spec && downloadText('prebite.md', spec.prebite || '', 'text/markdown')} /></div>
-                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.md" meta="Follow-up"
-                  onClick={() => spec && downloadText('postbite.md', spec.postbite || '', 'text/markdown')} /></div>
-              </div>
+              {spec && spec.files ? (
+                <React.Fragment>
+                  <FileCard icon="PPTX" accent={MVX.ink} name={spec.files.pptx} meta={`${outline.slides.length} slides · speaker notes · editable`}
+                    onClick={() => downloadServerFile(spec.files.pptx)} />
+                  <div style={{ display: 'flex', gap: 9 }}>
+                    <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name={spec.files.prebite} meta="Pre-session prep"
+                      onClick={() => downloadServerFile(spec.files.prebite)} /></div>
+                    <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name={spec.files.postbite} meta="Follow-up"
+                      onClick={() => downloadServerFile(spec.files.postbite)} /></div>
+                  </div>
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <FileCard icon="JSON" accent={MVX.ink} name={`${slugC(meta.topic)}.spec.json`} meta={`${outline.slides.length} slides · full training spec`}
+                    onClick={() => spec && downloadText(`${slugC(meta.topic)}.spec.json`, JSON.stringify(spec, null, 2), 'application/json')} />
+                  <div style={{ display: 'flex', gap: 9 }}>
+                    <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.md" meta="Pre-session prep"
+                      onClick={() => spec && downloadText('prebite.md', spec.prebite || '', 'text/markdown')} /></div>
+                    <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.md" meta="Follow-up"
+                      onClick={() => spec && downloadText('postbite.md', spec.postbite || '', 'text/markdown')} /></div>
+                  </div>
+                </React.Fragment>
+              )}
             </div>
             <button onClick={Bld.reset} style={{ marginTop: 16, background: 'transparent', border: 'none', cursor: 'pointer',
               fontFamily: MVX.display, fontSize: 13, fontWeight: 600, color: MVX.slate }}>↺  Build another training</button>

@@ -175,14 +175,21 @@ const GEN_STEPS = [
 // Same-origin backend (FastAPI serves this frontend); relative URLs avoid CORS.
 const API_BASE = '';
 
-// Trigger a browser download of text content (used for spec.json / bite docs
-// while the real .pptx/.docx renderer—Person A's engine—is still pending).
+// Trigger a browser download of text content (spec.json / bite markdown).
 function downloadText(filename, text, type = 'text/plain') {
   const blob = new Blob([text], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Download a file the backend rendered into output/ (the .pptx / .docx).
+function downloadServerFile(name) {
+  const a = document.createElement('a');
+  a.href = `${API_BASE}/api/download/${encodeURIComponent(name)}`;
+  a.download = name;
+  a.click();
 }
 
 function useBuilder() {
@@ -192,6 +199,7 @@ function useBuilder() {
   const [meta, setMeta] = React.useState({});
   const [spec, setSpec] = React.useState(null);
   const [genError, setGenError] = React.useState(null);
+  const [renderMode, setRenderMode] = React.useState(true); // true = .pptx deck, false = JSON spec
   const [messages, setMessages] = React.useState(() => ([
     { role: 'bot', text: 'Hi! I\u2019m the Maverx training builder. Answer five quick questions and I\u2019ll generate a complete, on-brand, editable deck \u2014 with speaker notes and prep docs.' },
     { role: 'bot', text: FIELDS[0].q, field: FIELDS[0].key },
@@ -275,7 +283,7 @@ function useBuilder() {
     fetch(`${API_BASE}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(meta),
+      body: JSON.stringify({ ...meta, render: renderMode }),
     })
       .then((res) => res.json().then((data) => {
         if (!res.ok) throw new Error((data && data.detail) || ('HTTP ' + res.status));
@@ -283,7 +291,7 @@ function useBuilder() {
       }))
       .then((data) => { setSpec(data); finish(); })
       .catch((e) => { setGenError(String((e && e.message) || e)); finish(); });
-  }, [phase, meta]);
+  }, [phase, meta, renderMode]);
 
   const reset = React.useCallback(() => {
     setPhase('intake'); setFieldIdx(0); setFollowup(false); setMeta({}); setGenStep(-1);
@@ -310,7 +318,8 @@ function useBuilder() {
 
   return {
     phase, meta, messages, botTyping, currentField, totalFields, answeredCount,
-    genStep, genSteps: GEN_STEPS, outline, spec, genError, downloadText,
+    genStep, genSteps: GEN_STEPS, outline, spec, genError,
+    renderMode, setRenderMode, downloadText, downloadServerFile,
     submit, generate, reset,
   };
 }
