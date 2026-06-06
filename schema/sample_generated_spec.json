@@ -1,0 +1,316 @@
+{
+  "meta": {
+    "topic": "Giving effective feedback",
+    "audience": "first-time team leads",
+    "level": "beginner",
+    "duration": "45",
+    "objective": "run a structured feedback conversation using the SBI model"
+  },
+  "slides": [
+    {
+      "block": "kickoff",
+      "title": "Welcome & Why Feedback Matters for New Team Leads",
+      "bullets": [
+        "Your words now shape how your team grows and performs.",
+        "Poor feedback causes disengagement; effective feedback builds trust.",
+        "First-time leads often avoid feedback \u2014 this course changes that.",
+        "Today you will practice a proven structure: the SBI model.",
+        "By the end, you will run a real feedback conversation confidently."
+      ],
+      "table": null,
+      "notes": {
+        "aim": "Establish psychological safety and create urgency around why feedback is a critical leadership skill from day one.",
+        "time": "Approximately 5 minutes \u2014 keep energy high and interaction light to warm up the group.",
+        "instructions": "Open with a quick show of hands: ask who has received feedback that felt unhelpful or vague, then briefly share one real consequence of poor feedback in a team setting.",
+        "reflective_q": "Think of a time you received feedback that actually changed your behaviour \u2014 what made it land?",
+        "debrief": "Acknowledge that most people remember specific, honest feedback positively, and frame today's session as giving participants that same skill to offer their own teams."
+      },
+      "layout": "Title Slide"
+    },
+    {
+      "block": "theory",
+      "title": "What Makes Feedback Effective: Core Principles",
+      "bullets": [
+        "Effective feedback is specific, timely, and focused on observable behavior",
+        "The SBI model: Situation, Behavior, Impact \u2014 a clear three-step structure",
+        "Situation: describe the exact context where the behavior occurred",
+        "Behavior: state only what you observed, never assumptions or personality",
+        "Impact: explain the real effect on the team, project, or stakeholder"
+      ],
+      "table": {
+        "headers": [
+          "SBI Element",
+          "Key Question to Answer",
+          "Example Phrase"
+        ],
+        "rows": [
+          [
+            "Situation",
+            "When and where did this happen?",
+            "\"In yesterday's client call...\""
+          ],
+          [
+            "Behavior",
+            "What exactly did I observe?",
+            "\"You interrupted the client twice...\""
+          ],
+          [
+            "Impact",
+            "What was the effect?",
+            "\"It made the client feel unheard.\""
+          ]
+        ]
+      },
+      "notes": {
+        "aim": "Help first-time team leads understand why structure matters in feedback and internalize the three components of the SBI model before practicing it.",
+        "time": "Spend approximately 5 minutes here \u2014 briefly explain each SBI element using the table as a visual anchor, avoiding a lecture-heavy approach.",
+        "instructions": "Walk through the table row by row using the example phrases; ask participants to mentally map a recent situation they experienced onto each element.",
+        "reflective_q": "Think of feedback you received that felt vague or unfair \u2014 which SBI element was missing and how did that affect you?",
+        "debrief": "Highlight that separating behavior from impact prevents defensiveness and keeps the conversation factual, which is the most common mistake new leads make."
+      },
+      "layout": "Title and Content"
+    },
+    {
+      "block": "example",
+      "title": "Effective vs. Ineffective Feedback in Action",
+      "bullets": [
+        "Ineffective: 'You always mess up client emails \u2014 it's unprofessional.'",
+        "Effective: Uses SBI \u2014 Situation, Behavior, specific Impact.",
+        "'Last Tuesday's client email (S) missed the deadline summary (B)\u2026'",
+        "'\u2026which caused the client to follow up twice, delaying sign-off (I).'",
+        "SBI keeps feedback factual, respectful, and actionable \u2014 not personal."
+      ],
+      "table": {
+        "headers": [
+          "Element",
+          "Ineffective Example",
+          "Effective SBI Example"
+        ],
+        "rows": [
+          [
+            "Situation",
+            "Not mentioned",
+            "Last Tuesday's client email"
+          ],
+          [
+            "Behavior",
+            "Vague: 'mess up'",
+            "Missed the deadline summary"
+          ],
+          [
+            "Impact",
+            "Vague: 'unprofessional'",
+            "Client followed up twice, delaying sign-off"
+          ],
+          [
+            "Tone",
+            "Accusatory, generalising",
+            "Factual, specific, respectful"
+          ]
+        ]
+      },
+      "notes": {
+        "aim": "Show first-time leads the concrete difference between vague, personal feedback and structured SBI feedback using a realistic workplace scenario.",
+        "time": "Spend roughly 5 minutes: 2 minutes presenting the comparison, 3 minutes facilitating quick reactions from the group.",
+        "instructions": "Read the ineffective example aloud first and ask participants what feels wrong about it before revealing the SBI version \u2014 this builds contrast and engagement.",
+        "reflective_q": "Think of feedback you have received that felt unfair \u2014 could SBI have made it land differently, and how?",
+        "debrief": "Highlight that SBI removes blame by anchoring feedback to observable facts, making it easier for the receiver to hear and act on the message."
+      },
+      "layout": "Title and Content"
+    },
+    {
+      "block": "theory",
+      "title": "The SBI Model: Situation, Behavior, Impact",
+      "bullets": [
+        "SBI gives feedback a clear, objective structure everyone can follow",
+        "Situation: name the specific context where the behavior occurred",
+        "Behavior: describe only observable actions, never assumptions or traits",
+        "Impact: explain the real effect on the team, project, or stakeholder",
+        "Separating these three parts keeps feedback factual and less personal"
+      ],
+      "table": {
+        "headers": [
+          "Component",
+          "Key Question",
+          "Example Phrase"
+        ],
+        "rows": [
+          [
+            "Situation",
+            "When and where did it happen?",
+            "\"In yesterday's stand-up meeting...\""
+          ],
+          [
+            "Behavior",
+            "What exactly did I observe?",
+            "\"...you interrupted two teammates...\""
+          ],
+          [
+            "Impact",
+            "What was the result or effect?",
+            "\"...so their ideas weren't captured in the plan.\""
+          ]
+        ]
+      },
+      "notes": {
+        "aim": "Introduce the SBI framework so first-time leads have a concrete, repeatable structure for delivering feedback confidently.",
+        "time": "Spend roughly 6 minutes here: 2 minutes presenting the model, 3 minutes walking through the table example row by row, 1 minute for quick questions.",
+        "instructions": "Reveal each SBI component one at a time and ask learners to guess the key question before showing it; this keeps engagement high during a theory-heavy slide.",
+        "reflective_q": "Think of feedback you received that felt unfair \u2014 which SBI component was missing or blurred in that moment?",
+        "debrief": "Highlight that most feedback breaks down at the Behavior step, where people slip into labeling personality rather than describing actions, and reassure leads that SBI practice fixes this."
+      },
+      "layout": "Title and Content"
+    },
+    {
+      "block": "example",
+      "title": "SBI Model Walkthrough: Real Team Lead Scenarios",
+      "bullets": [
+        "Scenario 1: Dev submits code late, affecting the sprint deadline",
+        "Situation: 'During Tuesday's sprint close, your pull request arrived at 5 pm'",
+        "Behavior: 'The team had to delay testing by three hours to review it'",
+        "Impact: 'The client demo was pushed back, raising concerns about reliability'",
+        "Scenario 2: Team member dominates stand-up, cutting off colleagues"
+      ],
+      "table": {
+        "headers": [
+          "SBI Element",
+          "Scenario 1 (Late Code)",
+          "Scenario 2 (Stand-up Dominance)"
+        ],
+        "rows": [
+          [
+            "Situation",
+            "Tuesday sprint close, 5 pm submission",
+            "Daily stand-up, Monday and Wednesday"
+          ],
+          [
+            "Behavior",
+            "Pull request submitted 4 hours past agreed time",
+            "Spoke for 8 min; interrupted two teammates"
+          ],
+          [
+            "Impact",
+            "Client demo delayed; team trust affected",
+            "Others disengaged; key blockers went unshared"
+          ]
+        ]
+      },
+      "notes": {
+        "aim": "Show first-time leads how SBI translates from theory into realistic, day-to-day feedback conversations they will actually face.",
+        "time": "Spend roughly 6 minutes: 1 minute framing each scenario, 2 minutes walking the table, and 2 minutes inviting reactions.",
+        "instructions": "Read Scenario 1 aloud as a narrative first, then reveal the table row by row so learners see how natural language maps to each SBI element; repeat for Scenario 2.",
+        "reflective_q": "Which part of SBI felt hardest to separate in these examples \u2014 and why might blurring Behavior and Impact cause defensiveness in the person receiving feedback?",
+        "debrief": "Highlight that Situation anchors the conversation in fact, preventing the lead from opening with a judgment; confirm learners can distinguish observable behavior from its downstream effect before moving to practice."
+      },
+      "layout": "Title and Content"
+    },
+    {
+      "block": "theory",
+      "title": "Structuring the Feedback Conversation: Before, During & After",
+      "bullets": [
+        "Prepare: choose a private setting, specific SBI notes, and calm timing.",
+        "Open: state your purpose clearly so the receiver feels safe, not ambushed.",
+        "Deliver: walk through Situation, Behavior, Impact \u2014 then pause and listen.",
+        "Explore: invite their perspective before jumping to solutions or judgments.",
+        "Close: agree on one concrete next step and schedule a follow-up check-in."
+      ],
+      "table": {
+        "headers": [
+          "Phase",
+          "Your Goal",
+          "Watch Out For"
+        ],
+        "rows": [
+          [
+            "Before",
+            "Gather facts; pick the right moment",
+            "Waiting too long after the event"
+          ],
+          [
+            "During",
+            "Share SBI; listen actively",
+            "Lecturing without pausing for response"
+          ],
+          [
+            "After",
+            "Confirm next steps; follow up",
+            "Leaving the conversation with no clear action"
+          ]
+        ]
+      },
+      "notes": {
+        "aim": "Help first-time team leads see feedback as a structured three-phase process, not a single uncomfortable moment.",
+        "time": "Approximately 5 minutes \u2014 2 minutes presenting phases, 2 minutes on the table, 1 minute for questions.",
+        "instructions": "Walk through each bullet sequentially, linking each phase to a real risk new leads face; use the table as a visual anchor.",
+        "reflective_q": "Think of a feedback conversation that felt unresolved \u2014 which phase do you think was skipped or rushed?",
+        "debrief": "Acknowledge that most discomfort comes from skipping the 'Before' phase; emphasise that preparation directly reduces anxiety for both parties."
+      },
+      "layout": "Title and Content"
+    },
+    {
+      "block": "exercise",
+      "title": "Practice: Run Your Own SBI Feedback Conversation",
+      "bullets": [
+        "Pair up: one person plays team lead, one plays team member",
+        "Team lead delivers prepared SBI feedback (Situation, Behavior, Impact)",
+        "Team member responds naturally \u2014 agree, push back, or ask questions",
+        "Switch roles after 3 minutes so both get practice as lead",
+        "Observer (if group of 3) notes which SBI elements land clearly"
+      ],
+      "table": {
+        "headers": [
+          "SBI Element",
+          "Your Prompt",
+          "Example Starter"
+        ],
+        "rows": [
+          [
+            "Situation",
+            "When and where did it happen?",
+            "\"In yesterday's stand-up...\""
+          ],
+          [
+            "Behavior",
+            "What specific action did you observe?",
+            "\"I noticed you interrupted twice...\""
+          ],
+          [
+            "Impact",
+            "What was the effect on team or work?",
+            "\"It made others hesitant to speak up.\""
+          ]
+        ]
+      },
+      "notes": {
+        "aim": "Give first-time leads a low-stakes environment to rehearse a full SBI conversation before using it with a real team member.",
+        "time": "Allow 8 minutes total: 3 minutes per role-play round plus 2 minutes for brief pair debrief on what felt natural or awkward.",
+        "instructions": "Ask participants to use a real or realistic scenario they wrote down earlier; if they have none, provide a printed scenario card as a fallback.",
+        "reflective_q": "Which part of the SBI model felt hardest to say out loud, and why do you think that element trips us up?",
+        "debrief": "Invite one or two pairs to share one thing their 'team member' wished had been stated more clearly, then connect that insight back to specificity in the Behavior step."
+      },
+      "layout": "Two Content"
+    },
+    {
+      "block": "wrapup",
+      "title": "Key Takeaways & Your First Feedback Commitment",
+      "bullets": [
+        "SBI keeps feedback clear: Situation, Behavior, Impact \u2014 in that order.",
+        "Separate observation from judgment to keep conversations productive.",
+        "Timely, specific feedback lands better than vague, delayed comments.",
+        "Psychological safety makes feedback a gift, not a threat.",
+        "Commit now: name one person and one behavior to address this week."
+      ],
+      "table": null,
+      "notes": {
+        "aim": "Consolidate learning and convert insight into a concrete personal action so participants leave with momentum, not just knowledge.",
+        "time": "Allow 5 minutes: 2 minutes reviewing takeaways together, 3 minutes for individual written commitment.",
+        "instructions": "Read through each bullet aloud and invite one volunteer reaction per point; then ask everyone to write their commitment (who, what SBI moment, by when) on a card or in their notes.",
+        "reflective_q": "Think about a feedback conversation you have been avoiding \u2014 what one SBI sentence could you open with when you have it this week?",
+        "debrief": "Ask two or three participants to share their commitment aloud to create social accountability, then remind the group that the first SBI conversation is always the hardest and gets easier with practice."
+      },
+      "layout": "Section Header"
+    }
+  ],
+  "prebite": "# Before the Session: A Quick Reflection\n\n**Time needed: 5\u201310 minutes**\n\nBefore we meet, think of a recent moment when someone gave *you* feedback \u2014 good or bad.\n\nJot down a few notes on these questions:\n\n1. **What did they say?** Summarise it in one or two sentences.\n2. **How did it land?** Did it feel fair, confusing, motivating, or uncomfortable?\n3. **What made the difference?** Was there something specific about *how* it was delivered that helped or hurt?\n\nThere are no right answers. Bring your notes to the session \u2014 we'll use real experiences like yours as our starting point.\n\n> \ud83d\udca1 **Tip:** If nothing comes to mind, think about feedback you *wish* you had received but didn't. That counts too.",
+  "postbite": "# After the Session: Put It Into Practice\n\n**Your assignment \u2014 complete within the next two weeks**\n\nNow it's your turn to run a real feedback conversation using the **SBI model** (Situation \u2192 Behaviour \u2192 Impact).\n\n## Your Task\n\n1. **Identify one person** on your team who would benefit from a piece of feedback \u2014 positive or developmental.\n2. **Plan your conversation** using this structure:\n   - **Situation:** When and where did this happen?\n   - **Behaviour:** What specific action did you observe?\n   - **Impact:** What was the effect on you, the team, or the work?\n3. **Have the conversation.** Keep it short, focused, and two-way \u2014 leave space for their response.\n\n## Reflect Afterwards\n\nWrite a few sentences on each of these:\n\n- What went well in the conversation?\n- What felt awkward or difficult, and why?\n- What would you do differently next time?\n\nBring your reflections to your next check-in with your manager or the group \u2014 sharing what you tried (even if it was messy) is how the learning sticks.\n\n> \ud83d\udca1 **Remember:** You don't need it to be perfect. A good-enough feedback conversation you actually have is worth far more than a perfect one you keep postponing."
+}

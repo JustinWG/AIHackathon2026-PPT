@@ -4,7 +4,7 @@
 
 function VariantC() {
   const Bld = useBuilder();
-  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline } = Bld;
+  const { phase, messages, botTyping, currentField, meta, answeredCount, totalFields, outline, spec, genError, downloadText } = Bld;
   const [draft, setDraft] = React.useState('');
   const inputRef = React.useRef(null);
 
@@ -156,22 +156,36 @@ function VariantC() {
           </div>
         )}
 
-        {phase === 'done' && (
+        {phase === 'done' && genError && (
+          <div style={{ maxWidth: 460, width: '100%', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 16, background: MVX.red, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 700 }}>!</span>
+              <h2 style={{ margin: 0, fontFamily: MVX.display, fontSize: 24, fontWeight: 600, letterSpacing: '-0.015em' }}>Generation failed</h2>
+            </div>
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: MVX.slate, lineHeight: 1.5 }}>{genError}</p>
+            <button onClick={Bld.generate} style={{ height: 46, padding: '0 22px', borderRadius: 12, border: 'none', background: MVX.ink, color: '#fff', cursor: 'pointer', fontFamily: MVX.display, fontWeight: 600, fontSize: 14.5 }}>Try again</button>
+          </div>
+        )}
+
+        {phase === 'done' && !genError && (
           <div style={{ maxWidth: 460, width: '100%', margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
               <span style={{ width: 30, height: 30, borderRadius: 16, background: '#1F9B5B', display: 'grid', placeItems: 'center' }}>
                 <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M3 7l3 3 5-6"/></svg>
               </span>
-              <h2 style={{ margin: 0, fontFamily: MVX.display, fontSize: 24, fontWeight: 600, letterSpacing: '-0.015em' }}>Done in seconds.</h2>
+              <h2 style={{ margin: 0, fontFamily: MVX.display, fontSize: 24, fontWeight: 600, letterSpacing: '-0.015em' }}>Training spec ready.</h2>
             </div>
             <p style={{ margin: '0 0 20px', fontSize: 14, color: MVX.slate, lineHeight: 1.5 }}>
-              {outline.slides.length} editable slides in the Maverx house style, with trainer notes on every slide — plus prep and follow-up docs.
+              {outline.slides.length} slides across the full Maverx didactic arc, with all 5 speaker-note fields on every slide. The editable .pptx render comes from the deck engine next — download the spec and prep docs now.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <FileCard icon="PPTX" accent={MVX.ink} name={`${slugC(meta.topic)}.pptx`} meta={`${outline.slides.length} slides \u00b7 speaker notes`} />
+              <FileCard icon="JSON" accent={MVX.ink} name={`${slugC(meta.topic)}.spec.json`} meta={`${outline.slides.length} slides · full training spec`}
+                onClick={() => spec && downloadText(`${slugC(meta.topic)}.spec.json`, JSON.stringify(spec, null, 2), 'application/json')} />
               <div style={{ display: 'flex', gap: 9 }}>
-                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.docx" meta="Pre-session prep" /></div>
-                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.docx" meta="Follow-up" /></div>
+                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.purple} name="prebite.md" meta="Pre-session prep"
+                  onClick={() => spec && downloadText('prebite.md', spec.prebite || '', 'text/markdown')} /></div>
+                <div style={{ flex: 1 }}><FileCard compact icon="DOC" accent={MVX.red} name="postbite.md" meta="Follow-up"
+                  onClick={() => spec && downloadText('postbite.md', spec.postbite || '', 'text/markdown')} /></div>
               </div>
             </div>
             <button onClick={Bld.reset} style={{ marginTop: 16, background: 'transparent', border: 'none', cursor: 'pointer',

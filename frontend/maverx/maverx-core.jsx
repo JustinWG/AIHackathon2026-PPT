@@ -172,11 +172,26 @@ const GEN_STEPS = [
   'Building pre-bite & post-bite docs',
 ];
 
+// Same-origin backend (FastAPI serves this frontend); relative URLs avoid CORS.
+const API_BASE = '';
+
+// Trigger a browser download of text content (used for spec.json / bite docs
+// while the real .pptx/.docx renderer—Person A's engine—is still pending).
+function downloadText(filename, text, type = 'text/plain') {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function useBuilder() {
   const [phase, setPhase] = React.useState('intake');
   const [fieldIdx, setFieldIdx] = React.useState(0);
   const [followupActive, setFollowup] = React.useState(false);
   const [meta, setMeta] = React.useState({});
+  const [spec, setSpec] = React.useState(null);
+  const [genError, setGenError] = React.useState(null);
   const [messages, setMessages] = React.useState(() => ([
     { role: 'bot', text: 'Hi! I\u2019m the Maverx training builder. Answer five quick questions and I\u2019ll generate a complete, on-brand, editable deck \u2014 with speaker notes and prep docs.' },
     { role: 'bot', text: FIELDS[0].q, field: FIELDS[0].key },
@@ -238,37 +253,65 @@ function useBuilder() {
     }
   }, [phase, fieldIdx, followupActive, meta, botTyping, pushBot]);
 
-  const generate = React.useCallback(() => {
+  const generate = React.useCallback(async () => {
     if (phase !== 'ready' && phase !== 'done') return;
     setPhase('generating');
+    setGenError(null);
+    setSpec(null);
     setGenStep(0);
+    // advance the step animation while the request is in flight
     let i = 0;
-    const tick = () => {
-      i += 1;
-      if (i < GEN_STEPS.length) {
-        setGenStep(i);
-        setTimeout(tick, 780 + Math.random() * 360);
-      } else {
-        setTimeout(() => { setGenStep(GEN_STEPS.length); setPhase('done'); }, 700);
+    const interval = setInterval(() => {
+      i = Math.min(i + 1, GEN_STEPS.length - 1);
+      setGenStep(i);
+    }, 1500);
+    try {
+      const res = await fetch(`${API_BASE}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(meta),
+      });
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try { detail = (await res.json()).detail || detail; } catch (_) {}
+        throw new Error(detail);
       }
-    };
-    setTimeout(tick, 820);
-  }, [phase]);
+      setSpec(await res.json());
+    } catch (e) {
+      setGenError(String((e && e.message) || e));
+    } finally {
+      clearInterval(interval);
+      setGenStep(GEN_STEPS.length);
+      setPhase('done');
+    }
+  }, [phase, meta]);
 
   const reset = React.useCallback(() => {
     setPhase('intake'); setFieldIdx(0); setFollowup(false); setMeta({}); setGenStep(-1);
+    setSpec(null); setGenError(null);
     setMessages([
       { role: 'bot', text: 'Fresh start. Let\u2019s build another training.' },
       { role: 'bot', text: FIELDS[0].q, field: FIELDS[0].key },
     ]);
   }, []);
 
-  const outline = (phase === 'ready' || phase === 'generating' || phase === 'done')
-    ? buildOutline(meta) : null;
+  // Prefer the REAL backend spec once it arrives; fall back to the client-side
+  // estimate before generation so the live brief still renders during intake.
+  const outline = React.useMemo(() => {
+    if (spec && Array.isArray(spec.slides)) {
+      return {
+        slides: spec.slides.map((s) => ({ block: s.block, title: s.title, t: 0 })),
+        mins: parseMinutes(meta.duration || '120'),
+        real: true,
+      };
+    }
+    return (phase === 'ready' || phase === 'generating' || phase === 'done')
+      ? buildOutline(meta) : null;
+  }, [spec, phase, meta]);
 
   return {
     phase, meta, messages, botTyping, currentField, totalFields, answeredCount,
-    genStep, genSteps: GEN_STEPS, outline,
+    genStep, genSteps: GEN_STEPS, outline, spec, genError, downloadText,
     submit, generate, reset,
   };
 }
