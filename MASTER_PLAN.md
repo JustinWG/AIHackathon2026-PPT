@@ -377,11 +377,16 @@ The generate prompt must explicitly instruct the model:
 
 ---
 
-### Person C — Glue, UX, Docs & QA
+### Person C — Glue, UX, Docs & QA (Milan)
 
 **Rubric ownership:** UX (8) + Docs (6) + Polish (5) + Setup & Onboarding (4) + Reproducibility (4)
 + Deployment Readiness (3) = **30 execution points**. These are largely "free" points that
 teams routinely leave on the table.
+
+> **Status update:** No changes to the function signatures — `assess_intake()` and
+> `generate_spec()` are unchanged. `layouts.json` is now filled so the app won't crash on
+> missing layouts. The `.env.example` has a new `OPENROUTER_MODEL` var — add it to the
+> Docker env docs.
 
 You work against **stubs** of A's and B's functions from minute 30. You are never blocked.
 

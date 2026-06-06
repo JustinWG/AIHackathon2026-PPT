@@ -1,6 +1,8 @@
-streamlit
-python-pptx
-python-docx
-openai
-python-dotenv
-jsonschema
+python-pptx==1.0.2
+python-docx==1.2.0
+openai==2.41.0
+python-dotenv==1.2.2
+jsonschema==4.26.0
+json-repair
+fastapi==0.115.6
+uvicorn==0.34.0

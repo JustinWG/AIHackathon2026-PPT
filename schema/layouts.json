@@ -1,11 +1,23 @@
 {
-  "_note": "A fills this file by running engine/layouts_report.py on master/maverx_master.pptx. Replace all FILL_ME values. B and C depend on block_to_layout.",
-  "layouts": [],
+  "_note": "Restricted to TWO layouts only (Title and Content, Title Only) for the time-limited build. Both have real placeholders; the Maverx theme (fonts, colors, logo) applies from the slide master. PERSON_A: these layouts live in a secondary slide master — search across ALL slide_masters, not just prs.slide_layouts.",
+
+  "master_file": "master/Maverx - Presentation Style Guide for Hackaton.pptx",
+
+  "layouts": [
+    {"name": "Title and Content", "placeholders": [{"idx": 0, "type": "TITLE", "name": "Title 1"}, {"idx": 1, "type": "OBJECT", "name": "Content Placeholder 2"}]},
+    {"name": "Title Only",        "placeholders": [{"idx": 0, "type": "TITLE", "name": "Title 1"}]}
+  ],
+
   "block_to_layout": {
-    "kickoff":  "FILL_ME — e.g. Title Slide",
-    "theory":   "FILL_ME — e.g. Title and Content",
-    "example":  "FILL_ME — e.g. Title and Content",
-    "exercise": "FILL_ME — e.g. Two Content",
-    "wrapup":   "FILL_ME — e.g. Title Slide"
+    "kickoff":  "Title Only",
+    "theory":   "Title and Content",
+    "example":  "Title and Content",
+    "exercise": "Title and Content",
+    "wrapup":   "Title and Content"
+  },
+
+  "usage_notes": {
+    "Title and Content": "Workhorse — idx 0 = title, idx 1 = body bullets or table",
+    "Title Only":        "Title-only cover/kickoff — idx 0 = title; NO body, so bullets/table do not render here"
   }
 }
