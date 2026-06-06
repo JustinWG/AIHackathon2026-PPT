@@ -253,7 +253,7 @@ function useBuilder() {
     }
   }, [phase, fieldIdx, followupActive, meta, botTyping, pushBot]);
 
-  const generate = React.useCallback(async () => {
+  const generate = React.useCallback(() => {
     if (phase !== 'ready' && phase !== 'done') return;
     setPhase('generating');
     setGenError(null);
@@ -265,25 +265,24 @@ function useBuilder() {
       i = Math.min(i + 1, GEN_STEPS.length - 1);
       setGenStep(i);
     }, 1500);
-    try {
-      const res = await fetch(`${API_BASE}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(meta),
-      });
-      if (!res.ok) {
-        let detail = `HTTP ${res.status}`;
-        try { detail = (await res.json()).detail || detail; } catch (_) {}
-        throw new Error(detail);
-      }
-      setSpec(await res.json());
-    } catch (e) {
-      setGenError(String((e && e.message) || e));
-    } finally {
+    const finish = () => {
       clearInterval(interval);
       setGenStep(GEN_STEPS.length);
       setPhase('done');
-    }
+    };
+    // Plain promises (no async/await) so the in-browser Babel transpile doesn't
+    // need regeneratorRuntime, which isn't loaded.
+    fetch(`${API_BASE}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(meta),
+    })
+      .then((res) => res.json().then((data) => {
+        if (!res.ok) throw new Error((data && data.detail) || ('HTTP ' + res.status));
+        return data;
+      }))
+      .then((data) => { setSpec(data); finish(); })
+      .catch((e) => { setGenError(String((e && e.message) || e)); finish(); });
   }, [phase, meta]);
 
   const reset = React.useCallback(() => {
