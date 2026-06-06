@@ -36,14 +36,10 @@ cd AIHackathon2026-PPT
 cp .env.example .env
 # Edit .env and replace your_key_here with your actual OPENROUTER_API_KEY
 
-# 3. Add the Maverx master template
-# Place the provided maverx_master.pptx in the master/ folder:
-cp /path/to/maverx_master.pptx master/maverx_master.pptx
-
-# 4. Build and run
+# 3. Build and run
 docker compose up --build
 
-# 5. Open in browser
+# 4. Open in browser
 # http://localhost:8501
 ```
 
@@ -98,6 +94,7 @@ The LLM never writes PPTX — it writes JSON that the assembler consumes.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `OPENROUTER_API_KEY` | Yes | Your OpenRouter API key |
+| `OPENROUTER_MODEL` | No | Model to use via OpenRouter (default: `google/gemini-3.5-flash`) |
 
 ---
 
@@ -113,4 +110,4 @@ streamlit run app/app.py
 
 ## Dependencies
 
-See `requirements.txt`. Pin versions with `pip freeze > requirements.txt` before submitting.
+See `requirements.txt` for pinned versions.
