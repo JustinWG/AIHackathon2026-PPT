@@ -1,91 +1,84 @@
 # Maverx AI Training Builder
 
-From a one-sentence idea to a complete, editable PowerPoint deck in Maverx house style —
-in under 10 minutes.
+From a one-sentence idea to a complete, structured training spec in Maverx house style —
+through a guided 5-question intake. A React UI talks to a FastAPI backend that runs the
+content pipeline and returns an editable training spec (slides, speaker notes, pre/post-bite).
 
 ---
 
 ## What it does
 
-1. Asks 5 targeted intake questions (with follow-ups for vague answers)
-2. Refuses to generate until intake is complete
-3. Generates a structured training deck following the Maverx didactic model:
+1. Asks 5 targeted intake questions (with follow-ups for vague answers, refuses until complete)
+2. Generates a training that follows the Maverx didactic arc:
    **kickoff → theory → example → exercise → wrap-up**
-4. Produces a fully editable `.pptx` using the Maverx master template
-5. Includes speaker notes on every slide (aim, time, instructions, reflective question, debrief)
-6. Produces a pre-session preparation document and a post-session follow-up document
+3. Produces a full training **spec**: per-slide title, bullets, tables, and speaker notes
+   with all 5 fields (aim, time, instructions, reflective question, debrief)
+4. Produces a **pre-bite** (prep) and **post-bite** (follow-up) document
+
+> **Note:** the editable `.pptx` / `.docx` *file* rendering is handled by the deck engine
+> (`engine/`, owned by Person A) and is being finished separately. Today the app returns the
+> full training **spec** and lets you download `spec.json`, `prebite.md`, and `postbite.md`.
 
 ---
 
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- An [OpenRouter](https://openrouter.ai) API key
-- The Maverx master template file (see Setup below)
+- An [OpenRouter](https://openrouter.ai) API key (the content pipeline uses it)
 
 ---
 
-## Setup
+## Run it with Docker Compose
 
 ```bash
-# 1. Clone the repo
-git clone <repo-url>
-cd AIHackathon2026-PPT
-
-# 2. Add your API key
+# 1. Add your API key
 cp .env.example .env
-# Edit .env and replace your_key_here with your actual OPENROUTER_API_KEY
+#    then edit .env and set:
+#      OPENROUTER_API_KEY=sk-or-v1-...your real key...
+#      OPENROUTER_MODEL=anthropic/claude-sonnet-4-6     # default; any OpenRouter model id works
 
-# 3. Build and run
+# 2. Build and start
 docker compose up --build
 
-# 4. Open in browser
-# http://localhost:8501
+# 3. Open the app
+#    http://localhost:8501
 ```
+
+To stop: `Ctrl+C`, or `docker compose down`.
+To rebuild after code changes: `docker compose up --build`.
 
 ---
 
 ## Usage
 
-1. Open `http://localhost:8501`
-2. Answer the intake questions in the chat interface
-3. If your answer is vague, the system will ask a follow-up — this is intentional
-4. Once all 5 questions are answered, click **Generate Training**
-5. Download your `.pptx`, `prebite.docx`, and `postbite.docx`
-
----
-
-## How to swap the template
-
-The pipeline is template-agnostic. To use a different branded template:
-
-1. Replace `master/maverx_master.pptx` with any `.pptx` master file
-2. Run `python engine/layouts_report.py master/your_master.pptx` to see its layout names
-3. Update `schema/layouts.json` → `block_to_layout` with the correct layout names
-4. Restart the app — no other changes needed
+1. Open **http://localhost:8501**
+2. Answer the 5 questions in the chat (topic, audience, level, duration, objective).
+   Vague answers get a follow-up — that's intentional.
+3. Click **Generate training deck**. Generation takes ~1–2 minutes (the pipeline writes
+   one slide at a time for reliability).
+4. Download the results: `spec.json`, `prebite.md`, `postbite.md`.
 
 ---
 
 ## Architecture
 
 ```
-Streamlit UI (app/app.py)
-  │
-  ├── Intake gate (content/intake.py)
-  │     Rule-based: 5 required fields, vagueness detection, follow-up questions
-  │
-  ├── Spec generator (content/generate.py)
-  │     Two LLM calls via OpenRouter → validated JSON training spec
-  │
-  ├── PPTX assembler (engine/build_pptx.py)
-  │     python-pptx: injects content into master template layouts
-  │
-  └── Docs builder (engine/build_docs.py)
-        python-docx: pre-bite and post-bite as editable .docx
+React UI (frontend/maverx, served as static files)
+   │  POST /api/generate  { topic, audience, level, duration, objective }
+   ▼
+FastAPI backend (backend/app.py)
+   │
+   ├── content/intake.py     — 5-question gate, vagueness follow-ups  (POST /api/assess)
+   └── content/generate.py   — two-stage LLM pipeline via OpenRouter
+                                outline → per-slide content → validated training spec
+   ▼
+Training spec JSON  (meta · slides · prebite · postbite)
+   ▼
+engine/ (Person A) — turns the spec into editable .pptx / .docx  [integration pending]
 ```
 
-All content flows through a typed JSON contract (`schema/training_spec.schema.json`).
-The LLM never writes PPTX — it writes JSON that the assembler consumes.
+The contract between the pipeline and the deck engine is documented in
+`schema/CONTRACT_FOR_PERSON_A.md`, with a real sample in `schema/sample_generated_spec.json`.
 
 ---
 
@@ -93,21 +86,40 @@ The LLM never writes PPTX — it writes JSON that the assembler consumes.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `OPENROUTER_API_KEY` | Yes | Your OpenRouter API key |
-| `OPENROUTER_MODEL` | No | Model to use via OpenRouter (default: `google/gemini-3.5-flash`) |
+| `OPENROUTER_API_KEY` | Yes | OpenRouter API key used for content generation |
+| `OPENROUTER_MODEL` | No | Model id (default `anthropic/claude-sonnet-4-6`); swap for a cheaper one to save cost on test runs |
 
 ---
 
-## Running without Docker
+## Run the backend without Docker (optional)
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env  # add your API key
-streamlit run app/app.py
+cp .env.example .env   # add your key
+uvicorn backend.app:app --host 0.0.0.0 --port 8501
+# open http://localhost:8501
 ```
 
 ---
 
-## Dependencies
+## Swapping the house-style template
 
-See `requirements.txt` for pinned versions.
+The deck engine builds onto the Maverx master at `master/maverx_master.pptx`. To use a
+different brand, replace that file and update `schema/layouts.json` → `block_to_layout`
+with layout names from the new master (`python engine/layouts_report.py <master.pptx>`
+lists them). The content pipeline is template-agnostic.
+
+---
+
+## Repo layout
+
+| Path | What |
+|------|------|
+| `frontend/maverx/` | React UI (intake wizard + live brief + downloads) |
+| `backend/app.py` | FastAPI: serves the UI + `/api/generate`, `/api/assess`, `/api/health` |
+| `content/` | Intake + LLM content pipeline (Person B) |
+| `engine/` | PPTX / docx renderer (Person A) — integration pending |
+| `schema/` | Training-spec JSON schema, layout map, sample, engine contract |
+| `master/` | Maverx master template + brand assets |
+| `STYLE_CHECKLIST.md` | House-style QA checklist |
+| `MASTER_PLAN.md` | Team plan and role split |
