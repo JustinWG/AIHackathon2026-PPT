@@ -1,0 +1,11 @@
+{
+  "_note": "A fills this file by running engine/layouts_report.py on master/maverx_master.pptx. Replace all FILL_ME values. B and C depend on block_to_layout.",
+  "layouts": [],
+  "block_to_layout": {
+    "kickoff":  "FILL_ME — e.g. Title Slide",
+    "theory":   "FILL_ME — e.g. Title and Content",
+    "example":  "FILL_ME — e.g. Title and Content",
+    "exercise": "FILL_ME — e.g. Two Content",
+    "wrapup":   "FILL_ME — e.g. Title Slide"
+  }
+}

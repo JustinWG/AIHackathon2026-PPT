@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "topic": "Prompt Engineering for Marketing",
+    "audience": "Marketing team, individual contributors",
+    "level": "beginner",
+    "duration": "180 minutes",
+    "objective": "Participants can write effective prompts for campaign copy using a structured framework"
+  },
+  "slides": [
+    {
+      "layout": "FILL_AFTER_LAYOUT_REPORT",
+      "block": "kickoff",
+      "title": "Welcome: Prompt Engineering for Marketers",
+      "bullets": [
+        "What you will be able to do after today",
+        "Agenda overview",
+        "Ground rules and questions"
+      ],
+      "table": null,
+      "notes": {
+        "aim": "Set expectations and create psychological safety for non-technical participants.",
+        "time": "10 minutes",
+        "instructions": "Open with a show-of-hands: who has tried ChatGPT before? Acknowledge all levels.",
+        "reflective_q": "What is one thing you hope to take away from today?",
+        "debrief": "Recap the learning objective and confirm the agenda is clear before moving on."
+      }
+    },
+    {
+      "layout": "FILL_AFTER_LAYOUT_REPORT",
+      "block": "theory",
+      "title": "What Is a Prompt and Why Does It Matter?",
+      "bullets": [
+        "A prompt is an instruction to an AI model",
+        "The quality of the output depends on the quality of the input",
+        "Three core elements: role, task, context"
+      ],
+      "table": null,
+      "notes": {
+        "aim": "Give participants a mental model for how prompts work.",
+        "time": "20 minutes",
+        "instructions": "Walk through each element with a whiteboard example. Use marketing scenarios.",
+        "reflective_q": "Can you think of a task you do weekly where this model might apply?",
+        "debrief": "Summarise: role tells the AI who to be, task tells it what to do, context tells it what you know."
+      }
+    },
+    {
+      "layout": "FILL_AFTER_LAYOUT_REPORT",
+      "block": "theory",
+      "title": "The Prompt Framework: Role – Task – Context – Format",
+      "bullets": [
+        "Role: 'You are a senior copywriter for a luxury brand'",
+        "Task: 'Write a 3-sentence Instagram caption'",
+        "Context: 'Product launch for summer collection, tone is aspirational'",
+        "Format: 'Return only the caption, no explanation'"
+      ],
+      "table": {
+        "headers": ["Element", "Question it answers", "Example"],
+        "rows": [
+          ["Role",    "Who should the AI be?",      "Senior copywriter"],
+          ["Task",    "What should it do?",          "Write an Instagram caption"],
+          ["Context", "What does it need to know?",  "Summer launch, aspirational tone"],
+          ["Format",  "How should it respond?",      "Caption only, 3 sentences"]
+        ]
+      },
+      "notes": {
+        "aim": "Make the framework concrete and memorable with a visual table.",
+        "time": "15 minutes",
+        "instructions": "Show the table slide, then demo live in ChatGPT using the exact example.",
+        "reflective_q": "Which element do you think is most often missing in prompts you have tried?",
+        "debrief": "Format is often forgotten — it dramatically changes output length and usefulness."
+      }
+    },
+    {
+      "layout": "FILL_AFTER_LAYOUT_REPORT",
+      "block": "example",
+      "title": "Real Example: Before and After",
+      "bullets": [
+        "BEFORE: 'Write something about our new product'",
+        "AFTER: 'You are a senior copywriter. Write a 3-sentence Instagram caption for our summer collection launch. Tone: aspirational. Return only the caption.'",
+        "Result: specific, on-brand, usable output"
+      ],
+      "table": null,
+      "notes": {
+        "aim": "Show the concrete difference the framework makes on a realistic marketing task.",
+        "time": "15 minutes",
+        "instructions": "Run both prompts live. Show outputs side by side. Let participants react.",
+        "reflective_q": "What is the first thing you notice about the difference in output quality?",
+        "debrief": "Specificity is not about more words — it is about the right words in the right places."
+      }
+    },
+    {
+      "layout": "FILL_AFTER_LAYOUT_REPORT",
+      "block": "exercise",
+      "title": "Your Turn: Write a Prompt for a Real Campaign",
+      "bullets": [
+        "Choose a task from your current campaign backlog",
+        "Apply the Role – Task – Context – Format framework",
+        "Run your prompt and evaluate the output",
+        "Pair up and compare: what worked, what did not?"
+      ],
+      "table": null,
+      "notes": {
+        "aim": "Apply the framework to a real task each participant already owns.",
+        "time": "30 minutes",
+        "instructions": "Give 15 min solo, then 10 min paired comparison. Circulate and ask questions. Save 5 min for 2–3 pairs to share.",
+        "reflective_q": "What would you change about your prompt based on what your pair showed you?",
+        "debrief": "There is rarely one right answer — iteration is the skill. The framework gives you a starting point."
+      }
+    },
+    {
+      "layout": "FILL_AFTER_LAYOUT_REPORT",
+      "block": "wrapup",
+      "title": "Key Takeaways and Next Steps",
+      "bullets": [
+        "Every prompt has four elements: role, task, context, format",
+        "Specificity beats length — precision matters more than detail",
+        "Iteration is the skill — your first prompt is a draft",
+        "This week: use the framework on one real work task"
+      ],
+      "table": null,
+      "notes": {
+        "aim": "Consolidate learning and give participants a clear immediate action.",
+        "time": "10 minutes",
+        "instructions": "Ask 2–3 participants to share their biggest insight. Close with the next-steps ask.",
+        "reflective_q": "What is the one thing you will try differently in your next AI interaction?",
+        "debrief": "End on action, not summary. Participants leave with a task, not just knowledge."
+      }
+    }
+  ],
+  "prebite": "## Before the Session\n\n**Read (10 min):** [How to Write Better AI Prompts](https://example.com) — or search 'prompt engineering basics' and read any short article.\n\n**Try (5 min):** Open ChatGPT or Claude and ask it to write a social media post for a product you know. Notice what you like and dislike about the result. Bring your example to the session.\n\n**Reflect:** What tasks in your current role are mostly writing or summarising? Come with one real example in mind.",
+  "postbite": "## After the Session\n\n**Assignment (this week):** Apply the Role–Task–Context–Format framework to one real work task. Screenshot your prompt and the output.\n\n**Reflection questions:**\n1. What surprised you most about how the AI responded to a well-structured prompt?\n2. Where did the output still fall short, and what would you add to the context next time?\n3. Which of your regular tasks could benefit most from prompt engineering?\n\n**Further reading:**\n- OpenAI Prompt Engineering Guide: https://platform.openai.com/docs/guides/prompt-engineering\n- Anthropic's Claude prompting tips: https://docs.anthropic.com/claude/docs/prompt-engineering"
+}
