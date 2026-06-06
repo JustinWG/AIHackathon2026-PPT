@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Maverx — Training Builder · Frontend Directions</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #f0eee9; }
+  * { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#45228A"/><stop offset=".5" stop-color="#C81E8E"/><stop offset="1" stop-color="#F58D25"/>
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" rx="20" fill="url(#g)"/>
+    <path d="M34 70 L34 36 L42 36 L42 70 Z" fill="#fff"/>
+    <path d="M48 70 L48 44 L56 44 L56 70 Z" fill="#fff"/>
+    <circle cx="60" cy="40" r="5" fill="#fff"/>
+  </svg>
+</template>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="maverx-core.jsx"></script>
+<script type="text/babel" src="variant-a.jsx"></script>
+<script type="text/babel" src="variant-b.jsx"></script>
+<script type="text/babel" src="variant-c.jsx"></script>
+
+<script type="text/babel">
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="directions" title="Maverx AI Training Builder"
+          subtitle="Three on-brand, light directions for the intake → generate → download flow. Each is live — type in the chat. Open any one fullscreen with the ⤢ button.">
+          <DCArtboard id="a" label="A · Clean Studio" width={1180} height={820} style={{ position: 'relative' }}>
+            <VariantA />
+          </DCArtboard>
+          <DCArtboard id="b" label="B · Split Workspace" width={1320} height={820} style={{ position: 'relative' }}>
+            <VariantB />
+          </DCArtboard>
+          <DCArtboard id="c" label="C · Gradient-forward" width={1200} height={820} style={{ position: 'relative' }}>
+            <VariantC />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
