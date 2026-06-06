@@ -33,15 +33,18 @@ LLM.
 
 ## Guarantees (so you can rely on them)
 
-- **`layout` is always one of the 6 real master layouts** and matches a layout that has
-  placeholders — see `schema/layouts.json`. The `block → layout` map I use:
+- **`layout` is always one of just TWO layouts** (restricted for the time-limited build),
+  both with real placeholders — see `schema/layouts.json`. The `block → layout` map:
   | block | layout |
   |-------|--------|
-  | kickoff | Title Slide |
+  | kickoff | Title Only |
   | theory | Title and Content |
   | example | Title and Content |
-  | exercise | Two Content |
-  | wrapup | Section Header |
+  | exercise | Title and Content |
+  | wrapup | Title and Content |
+  - `Title and Content`: idx 0 = title, idx 1 = body (bullets or table)
+  - `Title Only`: idx 0 = title, **no body placeholder** — kickoff slides won't have
+    rendered bullets there (any `bullets` on a Title Only slide can be ignored)
 - **All 6 required slide keys are always present.** `bullets` is always a list (maybe empty).
   `table` is always either `null` or a valid object. `notes` always has all 5 fields, all
   non-empty strings.
