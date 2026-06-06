@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TrainingSpec",
+  "type": "object",
+  "required": ["meta", "slides", "prebite", "postbite"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["topic", "audience", "level", "duration", "objective"],
+      "properties": {
+        "topic":     { "type": "string", "minLength": 1 },
+        "audience":  { "type": "string", "minLength": 1 },
+        "level":     { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+        "duration":  { "type": "string", "minLength": 1 },
+        "objective": { "type": "string", "minLength": 1 }
+      }
+    },
+    "slides": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["layout", "block", "title", "bullets", "table", "notes"],
+        "properties": {
+          "layout": { "type": "string", "minLength": 1 },
+          "block":  { "type": "string", "enum": ["kickoff", "theory", "example", "exercise", "wrapup"] },
+          "title":  { "type": "string", "minLength": 1 },
+          "bullets": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "table": {
+            "oneOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "required": ["headers", "rows"],
+                "properties": {
+                  "headers": { "type": "array", "items": { "type": "string" } },
+                  "rows":    { "type": "array", "items": { "type": "array", "items": { "type": "string" } } }
+                }
+              }
+            ]
+          },
+          "notes": {
+            "type": "object",
+            "required": ["aim", "time", "instructions", "reflective_q", "debrief"],
+            "properties": {
+              "aim":          { "type": "string", "minLength": 1 },
+              "time":         { "type": "string", "minLength": 1 },
+              "instructions": { "type": "string", "minLength": 1 },
+              "reflective_q": { "type": "string", "minLength": 1 },
+              "debrief":      { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "prebite":  { "type": "string", "minLength": 1 },
+    "postbite": { "type": "string", "minLength": 1 }
+  }
+}
