@@ -62,9 +62,9 @@ FOLLOW_UPS = {
 }
 
 
-def _normalize_level(value: str) -> str | None:
+def _normalize_level(value) -> str | None:
     """Map free-text level answer to schema enum. Returns None if unrecognisable."""
-    v = value.lower().strip()
+    v = str(value).lower().strip()
     if v in LEVEL_ENUM:
         return v
     for canonical, aliases in LEVEL_ALIASES.items():
@@ -73,16 +73,18 @@ def _normalize_level(value: str) -> str | None:
     return None
 
 
-def _is_vague(field: str, value: str) -> bool:
-    v = value.lower().strip()
+def _is_vague(field: str, value) -> bool:
+    # tolerate non-string input (e.g. duration entered as the number 90, not "90")
+    v = str(value).lower().strip()
     if field == "level":
         # vague = cannot be normalised to the enum
         return _normalize_level(value) is None
+    if field == "duration":
+        # a usable duration must contain a number; "a few hours" doesn't, "90" / "90 min" do.
+        # Checked before the generic length rule so short numbers like "90" are accepted.
+        return not any(ch.isdigit() for ch in v)
     if len(v) < 3:  # reject empty / single-char answers, allow short valid ones (HR, QA)
         return True
-    if field == "duration":
-        # a usable duration must contain a number; "a few hours" does not, "90 min" does
-        return not any(ch.isdigit() for ch in v)
     # topic / audience / objective: vague only if every meaningful word is a filler token
     tokens = [t for t in re.split(r"[^a-z0-9]+", v) if t and t not in STOPWORDS]
     if not tokens:
@@ -107,9 +109,13 @@ def _first_field_needing_input(state: dict) -> tuple[str | None, str | None]:
 
 
 def _build_meta(state: dict) -> dict:
-    """Return meta dict with level normalized to the schema enum."""
-    meta = {field: state[field] for field in REQUIRED_FIELDS}
-    meta["level"] = _normalize_level(state["level"]) or state["level"]
+    """Return meta dict with all values as strings and level normalized to the enum.
+
+    Coercing to str means a duration entered as the number 90 is stored as "90",
+    so it satisfies the schema (which requires strings) without the user needing quotes.
+    """
+    meta = {field: str(state[field]).strip() for field in REQUIRED_FIELDS}
+    meta["level"] = _normalize_level(state["level"]) or meta["level"]
     return meta
 
 

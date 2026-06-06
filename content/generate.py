@@ -12,6 +12,7 @@ Pipeline (two-stage):
 """
 import json
 import os
+import re
 from pathlib import Path
 
 from openai import OpenAI
@@ -65,26 +66,51 @@ def _block_map() -> dict:
     return LAYOUTS.get("block_to_layout", {})
 
 
-def _call_llm(client: OpenAI, system: str, user: str, max_tokens: int = 2000) -> str:
+def _call_llm(client: OpenAI, system: str, user: str, max_tokens: int = 2000,
+              temperature: float = 0.5) -> str:
     response = client.chat.completions.create(
         model=_model(),
         messages=[
             {"role": "system", "content": system},
             {"role": "user",   "content": user},
         ],
-        temperature=0.7,
+        temperature=temperature,
         max_tokens=max_tokens,
     )
     return response.choices[0].message.content
 
 
-def _extract_json(raw: str) -> dict:
-    """Strip markdown fences if present, then parse JSON."""
-    raw = raw.strip()
-    if raw.startswith("```"):
-        lines = raw.splitlines()
-        raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
-    return json.loads(raw)
+def _extract_json(raw: str):
+    """Parse JSON from an LLM response, tolerating fences and surrounding prose.
+
+    Handles: plain JSON, ```json fenced blocks, and JSON embedded in explanatory
+    text (slices from the first [ or { to its matching last bracket). Works for
+    both arrays (outline) and objects (spec). Raises GenerateError if empty.
+    """
+    if not raw or not raw.strip():
+        raise GenerateError("LLM returned an empty response")
+    s = raw.strip()
+
+    # strip markdown code fences anywhere (```json ... ``` or ``` ... ```)
+    if s.startswith("```"):
+        s = re.sub(r"^```[a-zA-Z0-9]*\s*", "", s)
+        s = re.sub(r"\s*```$", "", s).strip()
+
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+
+    # fall back: slice from the first opening bracket to the matching last one
+    candidates = [i for i in (s.find("["), s.find("{")) if i != -1]
+    if not candidates:
+        raise json.JSONDecodeError("no JSON value found in response", s, 0)
+    start = min(candidates)
+    close = "]" if s[start] == "[" else "}"
+    end = s.rfind(close)
+    if end <= start:
+        raise json.JSONDecodeError("no matching closing bracket in response", s, 0)
+    return json.loads(s[start:end + 1])
 
 
 def _validate(spec: dict) -> list[str]:
@@ -119,7 +145,11 @@ Rules:
 - Follow this arc without exception: kickoff → (theory → example)+ → exercise → wrapup
 - time_minutes values must sum exactly to the total duration
 - Kickoff and wrapup: 5–10 min each. Exercises: at least 20 min total.
-- Return ONLY the JSON array, no prose, no markdown fences."""
+
+OUTPUT FORMAT (critical):
+- Output ONLY the JSON array. Nothing before it, nothing after it.
+- No prose, no explanation, no markdown code fences.
+- Your response must start with the character [ and end with the character ]."""
 
 
 def _outline_user(meta: dict, slide_count: int, minutes: int) -> str:
@@ -140,21 +170,19 @@ def _generate_outline(client: OpenAI, meta: dict) -> list[dict]:
     system      = _load_prompt("outline_system.md") or _OUTLINE_SYSTEM
     user        = _outline_user(meta, slide_count, minutes)
 
-    raw = _call_llm(client, system, user, max_tokens=1500)
-    clean = raw.strip()
-    if clean.startswith("```"):
-        lines = clean.splitlines()
-        clean = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
-
+    raw = _call_llm(client, system, user, max_tokens=4000, temperature=0.3)
     try:
-        outline = json.loads(clean)
+        outline = _extract_json(raw)
     except json.JSONDecodeError:
         repair = (
-            f"Your response was not valid JSON. Return only the JSON array, no prose.\n\n"
-            f"Previous response:\n{raw}"
+            f"Your response was not valid JSON. Return only the JSON array, no prose, "
+            f"starting with [ and ending with ].\n\nPrevious response:\n{raw}"
         )
-        raw = _call_llm(client, system, repair, max_tokens=1500)
-        outline = json.loads(raw.strip())
+        raw = _call_llm(client, system, repair, max_tokens=4000, temperature=0.2)
+        try:
+            outline = _extract_json(raw)
+        except json.JSONDecodeError as e:
+            raise GenerateError(f"Outline call returned invalid JSON after retry: {e}")
 
     if not isinstance(outline, list):
         raise GenerateError(f"Outline call returned unexpected type: {type(outline)}")
@@ -201,10 +229,17 @@ REQUIRED JSON STRUCTURE:
 
 
 def _content_user(meta: dict, outline: list[dict]) -> str:
-    outline_text = "\n".join(
-        f"{i+1}. [{item['block'].upper()}] {item['title']} ({item.get('time_minutes', '?')} min)"
-        for i, item in enumerate(outline)
-    )
+    # Defensive: the outline is a planning aid; tolerate items with missing/oddly
+    # named keys rather than crashing. The content system prompt re-enforces the arc.
+    def _fmt(i: int, item: dict) -> str:
+        if not isinstance(item, dict):
+            return f"{i+1}. {item}"
+        block = str(item.get("block") or item.get("type") or "").upper()
+        title = item.get("title") or item.get("name") or "Untitled"
+        mins = item.get("time_minutes", item.get("minutes", "?"))
+        return f"{i+1}. [{block}] {title} ({mins} min)"
+
+    outline_text = "\n".join(_fmt(i, item) for i, item in enumerate(outline))
     return f"""Fill this outline into a complete training spec JSON.
 
 Metadata:
@@ -278,6 +313,9 @@ def generate_spec(meta: dict) -> dict:
     Stage 2: content (bullets, tables, speaker notes, pre/post-bite).
     Raises GenerateError on unrecoverable failure.
     """
+    # coerce every value to a string so numeric input (e.g. duration 90) satisfies
+    # the schema and never crashes string handling downstream
+    meta    = {k: str(v).strip() for k, v in meta.items()}
     client  = _get_client()
     outline = _generate_outline(client, meta)
     spec    = _generate_content(client, meta, outline)
