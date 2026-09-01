@@ -231,9 +231,8 @@ For EACH slide produce an object with exactly these keys:
 - "block": one of kickoff|theory|example|exercise|wrapup (use the one given)
 - "title": a short slide title
 - "bullets": array of up to 5 short lines (~12 words each)
-- "table": almost always null. Use a table ONLY when the content is truly tabular
-  (a side-by-side comparison or a columned framework). Most slides must be bullets,
-  not tables. A table replaces the bullets on that slide.
+- "table": null, UNLESS the per-slide instruction says to use a table — then an
+  object {"headers": [...], "rows": [[...], ...]}. A table replaces the bullets.
 - "notes": object with ALL five keys, each 1-2 sentences:
     "aim", "time", "instructions", "reflective_q", "debrief"
 
@@ -241,7 +240,7 @@ Make content specific to the topic and audience — not generic filler.
 Return ONLY valid JSON, no prose, no markdown fences."""
 
 
-def _slides_user(meta: dict, chunk: list[dict], start: int) -> str:
+def _slides_user(meta: dict, chunk: list[dict], start: int, want_table: bool = False) -> str:
     """User message asking for content for one chunk of slides."""
     lines = []
     for j, item in enumerate(chunk):
@@ -251,6 +250,12 @@ def _slides_user(meta: dict, chunk: list[dict], start: int) -> str:
         mins = item.get("time_minutes", item.get("minutes", "?"))
         lines.append(f"{start + j + 1}. block={block} | title={title} | ~{mins} min")
     body = "\n".join(lines)
+    if want_table:
+        fmt = ('Present this slide as a TABLE: set "table" to an object with "headers" '
+               '(2-4 short column names) and "rows" (2-5 rows), framing the content as a '
+               'comparison or a labeled framework. Keep "bullets" to 0-2 short lines.')
+    else:
+        fmt = 'Use "bullets" (3-5 short lines) and set "table" to null.'
     return f"""Write slide content for these {len(chunk)} slides of a training.
 
 Topic: {meta['topic']}
@@ -260,6 +265,8 @@ Objective: {meta['objective']}
 
 Slides (keep the given block; you may refine the title):
 {body}
+
+{fmt}
 
 Return ONLY JSON: {{"slides": [ <one object per slide, in order> ]}}"""
 
@@ -410,13 +417,14 @@ def _slides_from_response(part) -> list:
     return []
 
 
-def _generate_one_slide(client: OpenAI, system: str, meta: dict, item: dict, idx: int) -> dict:
+def _generate_one_slide(client: OpenAI, system: str, meta: dict, item: dict, idx: int,
+                        want_table: bool = False) -> dict:
     """Generate a single slide. One slide per call keeps each response small, so
     malformed JSON is rare; retry once, then fall back to the outline item so we
     always return a usable slide and never drop one."""
     for attempt in range(2):
         try:
-            raw = _call_llm(client, system, _slides_user(meta, [item], idx),
+            raw = _call_llm(client, system, _slides_user(meta, [item], idx, want_table),
                             max_tokens=2000, temperature=0.3 if attempt else 0.5)
             slides = _slides_from_response(_extract_json(raw))
             if slides and isinstance(slides[0], dict) and slides[0].get("title"):
@@ -446,7 +454,16 @@ def _generate_content(client: OpenAI, meta: dict, outline: list[dict]) -> dict:
         it["block"] = blocks[i]
         items.append(it)
 
-    all_slides = [_generate_one_slide(client, system, meta, it, i) for i, it in enumerate(items)]
+    # deterministically pick up to MAX_TABLES slides to render as tables — prefer
+    # example slides (great for before/after), then theory (frameworks).
+    candidates = ([i for i, b in enumerate(blocks) if b == "example"]
+                  + [i for i, b in enumerate(blocks) if b == "theory"])
+    table_idxs = set(candidates[:MAX_TABLES])
+
+    all_slides = [
+        _generate_one_slide(client, system, meta, it, i, want_table=(i in table_idxs))
+        for i, it in enumerate(items)
+    ]
 
     # prebite + postbite in their own small, reliable call
     prebite = postbite = ""
